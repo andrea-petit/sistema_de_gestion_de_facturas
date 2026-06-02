@@ -1,0 +1,748 @@
+{
+  "settings": {
+    "languages": [
+      "es"
+    ],
+    "tag": "nlp",
+    "threshold": 0.5,
+    "autoLoad": true,
+    "autoSave": true,
+    "modelFileName": "model.nlp",
+    "executeActionsBeforeAnswers": false,
+    "calculateSentiment": true
+  },
+  "nluManager": {
+    "settings": {
+      "tag": "nlu-manager"
+    },
+    "locales": [
+      "es"
+    ],
+    "languageNames": {},
+    "domainManagers": {
+      "es": {
+        "settings": {
+          "locale": "es",
+          "trainByDomain": false,
+          "tag": "domain-manager-es",
+          "nluByDomain": {
+            "default": {
+              "className": "NeuralNlu",
+              "settings": {}
+            }
+          },
+          "useStemDict": true
+        },
+        "stemDict": {
+          "pan": {
+            "intent": "Alimentos",
+            "domain": "default"
+          },
+          "harin": {
+            "intent": "Alimentos",
+            "domain": "default"
+          },
+          "maizin": {
+            "intent": "Alimentos",
+            "domain": "default"
+          },
+          "arroz": {
+            "intent": "Alimentos",
+            "domain": "default"
+          },
+          "past": {
+            "intent": "Alimentos",
+            "domain": "default"
+          },
+          "aceit": {
+            "intent": "Alimentos",
+            "domain": "default"
+          },
+          "azuc": {
+            "intent": "Alimentos",
+            "domain": "default"
+          },
+          "lech": {
+            "intent": "Alimentos",
+            "domain": "default"
+          },
+          "frit,pap": {
+            "intent": "Alimentos",
+            "domain": "default"
+          },
+          "comb,de,el": {
+            "intent": "Alimentos",
+            "domain": "default"
+          },
+          "clor": {
+            "intent": "Limpieza",
+            "domain": "default"
+          },
+          "detergent": {
+            "intent": "Limpieza",
+            "domain": "default"
+          },
+          "jabon": {
+            "intent": "Limpieza",
+            "domain": "default"
+          },
+          "desinfect": {
+            "intent": "Limpieza",
+            "domain": "default"
+          },
+          "suavic": {
+            "intent": "Limpieza",
+            "domain": "default"
+          },
+          "monitor": {
+            "intent": "Tecnologia",
+            "domain": "default"
+          },
+          "tecl": {
+            "intent": "Tecnologia",
+            "domain": "default"
+          },
+          "mous": {
+            "intent": "Tecnologia",
+            "domain": "default"
+          },
+          "laptop": {
+            "intent": "Tecnologia",
+            "domain": "default"
+          },
+          "impresor": {
+            "intent": "Tecnologia",
+            "domain": "default"
+          },
+          "papel": {
+            "intent": "Oficina",
+            "domain": "default"
+          },
+          "carpet": {
+            "intent": "Oficina",
+            "domain": "default"
+          },
+          "lapiz": {
+            "intent": "Oficina",
+            "domain": "default"
+          },
+          "cuadern": {
+            "intent": "Oficina",
+            "domain": "default"
+          },
+          "boligraf": {
+            "intent": "Oficina",
+            "domain": "default"
+          }
+        },
+        "intentDict": {
+          "Alimentos": "default",
+          "Limpieza": "default",
+          "Tecnologia": "default",
+          "Oficina": "default"
+        },
+        "sentences": [
+          {
+            "domain": "default",
+            "utterance": "pan",
+            "intent": "Alimentos"
+          },
+          {
+            "domain": "default",
+            "utterance": "harina",
+            "intent": "Alimentos"
+          },
+          {
+            "domain": "default",
+            "utterance": "maizina",
+            "intent": "Alimentos"
+          },
+          {
+            "domain": "default",
+            "utterance": "arroz",
+            "intent": "Alimentos"
+          },
+          {
+            "domain": "default",
+            "utterance": "pasta",
+            "intent": "Alimentos"
+          },
+          {
+            "domain": "default",
+            "utterance": "aceite",
+            "intent": "Alimentos"
+          },
+          {
+            "domain": "default",
+            "utterance": "azucar",
+            "intent": "Alimentos"
+          },
+          {
+            "domain": "default",
+            "utterance": "leche",
+            "intent": "Alimentos"
+          },
+          {
+            "domain": "default",
+            "utterance": "papas fritas",
+            "intent": "Alimentos"
+          },
+          {
+            "domain": "default",
+            "utterance": "combo de los combos",
+            "intent": "Alimentos"
+          },
+          {
+            "domain": "default",
+            "utterance": "cloro",
+            "intent": "Limpieza"
+          },
+          {
+            "domain": "default",
+            "utterance": "detergente",
+            "intent": "Limpieza"
+          },
+          {
+            "domain": "default",
+            "utterance": "jabon",
+            "intent": "Limpieza"
+          },
+          {
+            "domain": "default",
+            "utterance": "desinfectante",
+            "intent": "Limpieza"
+          },
+          {
+            "domain": "default",
+            "utterance": "suavizante",
+            "intent": "Limpieza"
+          },
+          {
+            "domain": "default",
+            "utterance": "monitor",
+            "intent": "Tecnologia"
+          },
+          {
+            "domain": "default",
+            "utterance": "teclado",
+            "intent": "Tecnologia"
+          },
+          {
+            "domain": "default",
+            "utterance": "mouse",
+            "intent": "Tecnologia"
+          },
+          {
+            "domain": "default",
+            "utterance": "laptop",
+            "intent": "Tecnologia"
+          },
+          {
+            "domain": "default",
+            "utterance": "impresora",
+            "intent": "Tecnologia"
+          },
+          {
+            "domain": "default",
+            "utterance": "papel",
+            "intent": "Oficina"
+          },
+          {
+            "domain": "default",
+            "utterance": "carpeta",
+            "intent": "Oficina"
+          },
+          {
+            "domain": "default",
+            "utterance": "lapiz",
+            "intent": "Oficina"
+          },
+          {
+            "domain": "default",
+            "utterance": "cuaderno",
+            "intent": "Oficina"
+          },
+          {
+            "domain": "default",
+            "utterance": "boligrafo",
+            "intent": "Oficina"
+          }
+        ],
+        "domains": {
+          "master_domain": {
+            "settings": {
+              "locale": "es",
+              "tag": "nlu-es",
+              "keepStopwords": true,
+              "nonefeatureValue": 1,
+              "nonedeltaMultiplier": 1.2,
+              "spellCheck": false,
+              "spellCheckDistance": 1,
+              "filterZeros": true,
+              "log": true
+            },
+            "features": {
+              "pan": 1,
+              "harin": 1,
+              "maizin": 1,
+              "arroz": 1,
+              "past": 1,
+              "aceit": 1,
+              "azuc": 1,
+              "lech": 1,
+              "pap": 1,
+              "frit": 1,
+              "comb": 1,
+              "de": 1,
+              "el": 1,
+              "clor": 1,
+              "detergent": 1,
+              "jabon": 1,
+              "desinfect": 1,
+              "suavic": 1,
+              "monitor": 1,
+              "tecl": 1,
+              "mous": 1,
+              "laptop": 1,
+              "impresor": 1,
+              "papel": 1,
+              "carpet": 1,
+              "lapiz": 1,
+              "cuadern": 1,
+              "boligraf": 1
+            },
+            "intents": {
+              "Alimentos": 1,
+              "Limpieza": 1,
+              "Tecnologia": 1,
+              "Oficina": 1
+            },
+            "intentFeatures": {
+              "Alimentos": {
+                "pan": 1,
+                "harin": 1,
+                "maizin": 1,
+                "arroz": 1,
+                "past": 1,
+                "aceit": 1,
+                "azuc": 1,
+                "lech": 1,
+                "pap": 1,
+                "frit": 1,
+                "comb": 1,
+                "de": 1,
+                "el": 1
+              },
+              "Limpieza": {
+                "clor": 1,
+                "detergent": 1,
+                "jabon": 1,
+                "desinfect": 1,
+                "suavic": 1
+              },
+              "Tecnologia": {
+                "monitor": 1,
+                "tecl": 1,
+                "mous": 1,
+                "laptop": 1,
+                "impresor": 1
+              },
+              "Oficina": {
+                "papel": 1,
+                "carpet": 1,
+                "lapiz": 1,
+                "cuadern": 1,
+                "boligraf": 1
+              }
+            },
+            "featuresToIntent": {
+              "pan": [
+                "Alimentos"
+              ],
+              "harin": [
+                "Alimentos"
+              ],
+              "maizin": [
+                "Alimentos"
+              ],
+              "arroz": [
+                "Alimentos"
+              ],
+              "past": [
+                "Alimentos"
+              ],
+              "aceit": [
+                "Alimentos"
+              ],
+              "azuc": [
+                "Alimentos"
+              ],
+              "lech": [
+                "Alimentos"
+              ],
+              "pap": [
+                "Alimentos"
+              ],
+              "frit": [
+                "Alimentos"
+              ],
+              "comb": [
+                "Alimentos"
+              ],
+              "de": [
+                "Alimentos"
+              ],
+              "el": [
+                "Alimentos"
+              ],
+              "clor": [
+                "Limpieza"
+              ],
+              "detergent": [
+                "Limpieza"
+              ],
+              "jabon": [
+                "Limpieza"
+              ],
+              "desinfect": [
+                "Limpieza"
+              ],
+              "suavic": [
+                "Limpieza"
+              ],
+              "monitor": [
+                "Tecnologia"
+              ],
+              "tecl": [
+                "Tecnologia"
+              ],
+              "mous": [
+                "Tecnologia"
+              ],
+              "laptop": [
+                "Tecnologia"
+              ],
+              "impresor": [
+                "Tecnologia"
+              ],
+              "papel": [
+                "Oficina"
+              ],
+              "carpet": [
+                "Oficina"
+              ],
+              "lapiz": [
+                "Oficina"
+              ],
+              "cuadern": [
+                "Oficina"
+              ],
+              "boligraf": [
+                "Oficina"
+              ]
+            },
+            "neuralNetwork": {
+              "settings": {
+                "locale": "es",
+                "tag": "nlu-es",
+                "keepStopwords": true,
+                "nonefeatureValue": 1,
+                "nonedeltaMultiplier": 1.2,
+                "spellCheck": false,
+                "spellCheckDistance": 1,
+                "filterZeros": true,
+                "log": true
+              },
+              "features": [
+                "pan",
+                "harin",
+                "maizin",
+                "arroz",
+                "past",
+                "aceit",
+                "azuc",
+                "lech",
+                "pap",
+                "frit",
+                "comb",
+                "de",
+                "el",
+                "clor",
+                "detergent",
+                "jabon",
+                "desinfect",
+                "suavic",
+                "monitor",
+                "tecl",
+                "mous",
+                "laptop",
+                "impresor",
+                "papel",
+                "carpet",
+                "lapiz",
+                "cuadern",
+                "boligraf"
+              ],
+              "intents": [
+                "Alimentos",
+                "Limpieza",
+                "Tecnologia",
+                "Oficina"
+              ],
+              "perceptrons": [
+                [
+                  9.366266250610352,
+                  9.361926078796387,
+                  9.33812427520752,
+                  9.312759399414062,
+                  9.285845756530762,
+                  9.257399559020996,
+                  9.22744083404541,
+                  9.195988655090332,
+                  4.684161186218262,
+                  4.684161186218262,
+                  3.1257386207580566,
+                  3.1257386207580566,
+                  3.1257386207580566,
+                  -4.92227029800415,
+                  -4.908285140991211,
+                  -4.898306846618652,
+                  -4.887687683105469,
+                  -4.876212120056152,
+                  -4.863887310028076,
+                  -4.85072135925293,
+                  -4.836723804473877,
+                  -4.821902751922607,
+                  -4.806270599365234,
+                  -4.789836406707764,
+                  -4.772614002227783,
+                  -4.754613399505615,
+                  -4.735849380493164,
+                  -4.716334342956543,
+                  4.859118649083223
+                ],
+                [
+                  -2.7173166275024414,
+                  -2.7071144580841064,
+                  -2.6964497566223145,
+                  -2.685330390930176,
+                  -2.6737661361694336,
+                  -2.661766290664673,
+                  -2.6493396759033203,
+                  -2.6364970207214355,
+                  -1.3614957332611084,
+                  -1.3614957332611084,
+                  -0.9104992151260376,
+                  -0.9104992151260376,
+                  -0.9104992151260376,
+                  11.429338455200195,
+                  11.41673469543457,
+                  11.38433837890625,
+                  11.350057601928711,
+                  11.313908576965332,
+                  -2.8019914627075195,
+                  -2.7911314964294434,
+                  -2.782060384750366,
+                  -2.7749783992767334,
+                  -2.769087076187134,
+                  -2.7624671459198,
+                  -2.7553560733795166,
+                  -2.7477591037750244,
+                  -2.7396819591522217,
+                  -2.731130361557007,
+                  2.767894447954241
+                ],
+                [
+                  -2.7611241340637207,
+                  -2.753359317779541,
+                  -2.7450928688049316,
+                  -2.7363317012786865,
+                  -2.727083683013916,
+                  -2.7173562049865723,
+                  -2.7071568965911865,
+                  -2.696495294570923,
+                  -1.3782278299331665,
+                  -1.3782278299331665,
+                  -0.9196652173995972,
+                  -0.9196652173995972,
+                  -0.9196652173995972,
+                  -2.6808531284332275,
+                  -2.6689083576202393,
+                  -2.656529426574707,
+                  -2.643725872039795,
+                  -2.6305084228515625,
+                  11.42928409576416,
+                  11.41667652130127,
+                  11.38427734375,
+                  11.349992752075195,
+                  11.313840866088867,
+                  -2.8021416664123535,
+                  -2.7908380031585693,
+                  -2.782163143157959,
+                  -2.77506422996521,
+                  -2.769163131713867,
+                  2.773336202499305
+                ],
+                [
+                  -2.8013405799865723,
+                  -2.7899386882781982,
+                  -2.7811200618743896,
+                  -2.773907423019409,
+                  -2.767345905303955,
+                  -2.7601122856140137,
+                  -2.752370595932007,
+                  -2.744127035140991,
+                  -1.4006520509719849,
+                  -1.4006520509719849,
+                  -0.9389416575431824,
+                  -0.9389416575431824,
+                  -0.9389416575431824,
+                  -2.732243061065674,
+                  -2.722639322280884,
+                  -2.712554454803467,
+                  -2.7019975185394287,
+                  -2.6909778118133545,
+                  -2.679504156112671,
+                  -2.667586326599121,
+                  -2.655233860015869,
+                  -2.642456531524658,
+                  -2.629265069961548,
+                  11.430501937866211,
+                  11.417868614196777,
+                  11.385445594787598,
+                  11.351134300231934,
+                  11.314959526062012,
+                  2.771879177145991
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+    "intentDomains": {},
+    "extraSentences": [
+      [
+        "es",
+        "pan"
+      ],
+      [
+        "es",
+        "harina"
+      ],
+      [
+        "es",
+        "maizina"
+      ],
+      [
+        "es",
+        "arroz"
+      ],
+      [
+        "es",
+        "pasta"
+      ],
+      [
+        "es",
+        "aceite"
+      ],
+      [
+        "es",
+        "azucar"
+      ],
+      [
+        "es",
+        "leche"
+      ],
+      [
+        "es",
+        "papas fritas"
+      ],
+      [
+        "es",
+        "combo de los combos"
+      ],
+      [
+        "es",
+        "cloro"
+      ],
+      [
+        "es",
+        "detergente"
+      ],
+      [
+        "es",
+        "jabon"
+      ],
+      [
+        "es",
+        "desinfectante"
+      ],
+      [
+        "es",
+        "suavizante"
+      ],
+      [
+        "es",
+        "monitor"
+      ],
+      [
+        "es",
+        "teclado"
+      ],
+      [
+        "es",
+        "mouse"
+      ],
+      [
+        "es",
+        "laptop"
+      ],
+      [
+        "es",
+        "impresora"
+      ],
+      [
+        "es",
+        "papel"
+      ],
+      [
+        "es",
+        "carpeta"
+      ],
+      [
+        "es",
+        "lapiz"
+      ],
+      [
+        "es",
+        "cuaderno"
+      ],
+      [
+        "es",
+        "boligrafo"
+      ]
+    ]
+  },
+  "ner": {
+    "settings": {
+      "tag": "ner",
+      "entityPreffix": "%",
+      "entitySuffix": "%"
+    },
+    "rules": {}
+  },
+  "nlgManager": {
+    "settings": {
+      "tag": "nlg-manager"
+    },
+    "responses": {}
+  },
+  "actionManager": {
+    "settings": {
+      "tag": "action-manager"
+    },
+    "actions": {}
+  },
+  "slotManager": {}
+}

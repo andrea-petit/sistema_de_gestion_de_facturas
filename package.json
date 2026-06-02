@@ -1,0 +1,19 @@
+{
+  "name": "sgaf-ocr-preview",
+  "version": "1.0.0",
+  "description": "Adelanto funcional del módulo OCR para el SGAF",
+  "main": "app.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1",
+    "node-nlp": "^5.0.0-alpha.5",
+    "pg": "^8.21.0",
+    "tesseract.js": "^5.1.0"
+  },
+  "author": "SGAF Developer",
+  "license": "ISC"
+}
