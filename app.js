@@ -5,13 +5,17 @@ const path = require('path');
 const fs = require('fs');
 const { entrenarModelo, clasificarTexto } = require('./services/nlpClassifier');
 const { extraerProveedorYDireccion } = require('./services/facturaParser');
-
+const facturaRoutes = require('./routes/facturas_routes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const upload = multer({ dest: 'uploads/' });
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use('/api', facturaRoutes);
+
 
 
 async function extraerDatosFactura(imagePath) {
@@ -136,7 +140,11 @@ async function extraerDatosFactura(imagePath) {
 /**
  * Ruta de la API encargada de recibir y despachar la imagen
  */
-app.post('/api/procesar-factura', upload.single('factura'), async (req, res) => {
+// Friendly GET so visiting this URL clarifies expected usage
+app.get('/api/facturas', (req, res) => {
+  return res.status(200).json({ message: 'This endpoint accepts POST requests with form-data (field name: factura) to upload an invoice image.' });
+});
+app.post('/api/facturas', upload.single('factura'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Falta subir el archivo de imagen' });

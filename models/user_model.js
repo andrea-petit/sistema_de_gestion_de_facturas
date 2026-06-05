@@ -1,0 +1,65 @@
+const pool = require('../config/bd');
+
+const userModel = {
+    getAllUsers() {
+        return new Promise((resolve, reject) => {
+            pool.query('SELECT * FROM usuarios', (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
+    },
+
+    getUserById(id) {
+        return new Promise((resolve, reject) => {
+            pool.query('SELECT * FROM usuarios WHERE id = $1', [id], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
+    },
+
+    createUser(userData) {  
+        return new Promise((resolve, reject) => {
+            pool.query('INSERT INTO usuarios (nombre_usuario, contraseña_hash, nombre_completo) VALUES ($1, $2, $3) RETURNING *', [userData.nombre_usuario, userData.contraseña_hash, userData.nombre_completo], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
+    },
+
+    updateUser(id, campo, valor) {
+        return new Promise((resolve, reject) => {
+            pool.query(`UPDATE usuarios SET ${campo} = $1 WHERE id = $2 RETURNING *`, [valor, id], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
+    },
+
+    inativateUser(id) {
+        return new Promise((resolve, reject) => {
+            pool.query('UPDATE usuarios SET activo = false WHERE id = $1 RETURNING *', [id], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
+    }
+}
+
+module.exports = userModel;

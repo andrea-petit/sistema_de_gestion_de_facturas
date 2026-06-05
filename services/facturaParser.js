@@ -1,24 +1,26 @@
 function extraerProveedorYDireccion(lineas) {
   let proveedor = null;
   let direccion = null;
+  let telefono = null;
 
-  for (let i = 0; i < Math.min(10, lineas.length); i++) {
+  for (let i = 0; i < Math.min(12, lineas.length); i++) {
     const linea = lineas[i].trim();
     const lineaUpper = linea.toUpperCase();
 
-    // --- FILTRO DE EXCLUSIÓN OPTIMIZADO ---
-    // Agregamos variantes comunes de errores de OCR para la palabra SENIAT (como SENTAT o SEN1AT)
+
     if (
       lineaUpper.includes('CLIENTE:') || 
       lineaUpper.includes('CI/RIF:') || 
-      lineaUpper.includes('DIR:') ||
-      /SE[NM][I1T]AT/i.test(lineaUpper) || // Captura SENIAT, SENTAT, SEN1AT
-      lineaUpper.startsWith('RIF ')
+      lineaUpper.includes('RAZON SOCIAL:') ||
+      lineaUpper.startsWith('DIR:') || 
+      /SE[NM][I1T]AT/i.test(lineaUpper) || 
+      /^[VJG-]?\s*RIF/i.test(lineaUpper) || 
+      /CZL-\d+/i.test(lineaUpper)
     ) {
       continue; 
     }
 
-    // --- DETECCIÓN DE PROVEEDOR ---
+
     if (!proveedor) {
       if (
         linea.length > 4 &&
@@ -35,19 +37,27 @@ function extraerProveedorYDireccion(lineas) {
       }
     }
 
-    // --- DETECCIÓN DE DIRECCIÓN ---
     if (!direccion) {
       if (
-        linea.match(/av\.|av\s|calle|urb\.|urb\s|local|edif|centro/i)
+        linea.match(/av\.|av\s|calle|urb\.|urb\s|local|edif|centro|piso|sector|zona\s*postal/i) ||
+        lineaUpper.includes('FALCON') || lineaUpper.includes('PUNTA CARDON')
       ) {
         direccion = linea;
+      }
+    }
+
+    if (!telefono) {
+      const telMatch = linea.match(/(?:telefono|telef|tlf|tel)[:.\s]*([\d\s-]{7,15})/i);
+      if (telMatch && !lineaUpper.includes('CLIENTE')) {
+        telefono = telMatch[1].trim();
       }
     }
   }
 
   return {
     proveedor,
-    direccion
+    direccion,
+    telefono
   };
 }
 

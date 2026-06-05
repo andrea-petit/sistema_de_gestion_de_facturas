@@ -60,6 +60,11 @@
         </div>
 
         <div class="data-row">
+            <span class="data-label">Nro. Control:</span>
+            <span class="data-value" id="resControl">-</span>
+        </div>
+
+        <div class="data-row">
             <span class="data-label">Fecha de Emisión:</span>
             <span class="data-value" id="resFecha">-</span>
         </div>
@@ -98,6 +103,7 @@
     const loadingText = document.getElementById('loadingText');
     const resultSection = document.getElementById('resultSection');
 
+
     fileInput.addEventListener('change', () => {
         if (fileInput.files.length > 0) uploadLabel.innerText = `Seleccionado: ${fileInput.files[0].name}`;
     });
@@ -111,7 +117,7 @@
         resultSection.style.display = 'none';
 
         try {
-            const response = await fetch('/api/procesar-factura', { method: 'POST', body: formData });
+            const response = await fetch('/api/facturas', { method: 'POST', body: formData });
             const resultado = await response.json();
             if (response.ok) {
                 const info = resultado.data;
@@ -126,6 +132,9 @@
 
                 document.getElementById('resNro').innerText =
                     info.nroFactura || 'No detectado';
+
+                document.getElementById('resControl').innerText =
+                    info.nroControl || 'No detectado';
 
                 document.getElementById('resFecha').innerText =
                     info.fechaEmision || 'No detectado';

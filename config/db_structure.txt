@@ -1,0 +1,89 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.usuarios (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  nombre_usuario text NOT NULL UNIQUE,
+  contraseña_hash text NOT NULL UNIQUE,
+  nombre_completo text NOT NULL,
+  rol text NOT NULL DEFAULT '''empleado'''::text,
+  activo boolean NOT NULL DEFAULT true,
+  fecha_creacion timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT usuarios_pkey PRIMARY KEY (id)
+); 
+CREATE TABLE public.proveedores (
+  id uuid NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+  tipo_documento text NOT NULL,
+  razon_social text NOT NULL,
+  direccion text,
+  telefono text,
+  tipo_contribuyente text NOT NULL DEFAULT '''Ordinario'''::text,
+  CONSTRAINT proveedores_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.comprobante_retencion (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  proveedor_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  numero_comprobante text NOT NULL UNIQUE,
+  fecha_emision date NOT NULL,
+  periodo_fiscal text NOT NULL,
+  CONSTRAINT comprobante_retencion_pkey PRIMARY KEY (id),
+  CONSTRAINT comprobante_retencion_proveedor_id_fkey FOREIGN KEY (proveedor_id) REFERENCES public.proveedores(id)
+);
+CREATE TABLE public.compras (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  proveedor_id uuid NOT NULL,
+  comprobante_retencion uuid, // cambio a nullable para permitir compras sin comprobante de retención
+  tipo_documento text NOT NULL DEFAULT '''factura'''::text,
+  fecha_emision date NOT NULL,
+  fecha_registro timestamp with time zone NOT NULL DEFAULT now(),
+  numero_factura text NOT NULL,
+  numero_control character varying NOT NULL,
+  factura_afectada text,
+  monto_total numeric NOT NULL DEFAULT 0.00,
+  estatus text DEFAULT '''activa'''::text,
+  categoria bigint NOT NULL,
+  img_url character varying,
+  CONSTRAINT compras_pkey PRIMARY KEY (id),
+  CONSTRAINT compras_proveedor_id_fkey FOREIGN KEY (proveedor_id) REFERENCES public.proveedores(id),
+  CONSTRAINT compras_comprobante_retencion_fkey FOREIGN KEY (comprobante_retencion) REFERENCES public.comprobante_retencion(id),
+  CONSTRAINT compras_categoria_fkey FOREIGN KEY (categoria) REFERENCES public.categorias(id)
+);
+CREATE TABLE public.compra_impuestos (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  compra_id uuid NOT NULL,
+  porcentaje_alicuota numeric NOT NULL DEFAULT 0.00,
+  base_imponible numeric NOT NULL DEFAULT 0.00,
+  monto_iva numeric NOT NULL DEFAULT 0.00,
+  porcentaje_retencion numeric NOT NULL DEFAULT 0.00,
+  monto_retencion numeric NOT NULL DEFAULT 0.00,
+  CONSTRAINT compra_impuestos_pkey PRIMARY KEY (id),
+  CONSTRAINT compra_impuestos_compra_id_fkey FOREIGN KEY (compra_id) REFERENCES public.compras(id)
+);
+CREATE TABLE public.historial_cambios (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  usuario_id uuid,
+  tabla_afectada character varying,
+  registro_id smallint,
+  accion character varying,
+  valor_anterior jsonb,
+  valor_nuevo jsonb,
+  fecha_hora timestamp with time zone NOT NULL DEFAULT now(),
+  direccion_ip character varying,
+  CONSTRAINT historial_cambios_pkey PRIMARY KEY (id),
+  CONSTRAINT historial_cambios_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
+);
+CREATE TABLE public.empresa (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  nombre character varying NOT NULL,
+  tipo_documento character varying NOT NULL,
+  rif integer NOT NULL,
+  direccion character varying NOT NULL,
+  tipo_contribuyente character varying NOT NULL,
+  porcentaje_retencion integer,
+  CONSTRAINT empresa_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.categorias (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  nombre character varying NOT NULL,
+  CONSTRAINT categorias_pkey PRIMARY KEY (id)
+);
