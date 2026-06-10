@@ -32,38 +32,62 @@ async function clasificarTexto(textoFactura) {
       await entrenarModelo();
     }
 
+    // CONTROL DE ENTRADA: Verificamos qué le llega al archivo desde ocrService
+    console.log(`[SGAF - NLP] Procesando texto de entrada de longitud: ${textoFactura ? textoFactura.length : 0}`);
+
     const lineas = textoFactura.split('\n');
     const productosEncontrados = [];
 
     for (let linea of lineas) {
-      const lineaUpper = linea.toUpperCase();
+      const lineaUpper = linea.toUpperCase().trim();
       
+      // Filtros de exclusión de líneas basura comunes en facturas
       if (
+        !lineaUpper ||
         lineaUpper.includes('TOTAL') || 
         lineaUpper.includes('EXENTO') || 
         lineaUpper.includes('EFECTIVO') || 
         lineaUpper.includes('CLIENTE') ||
-        lineaUpper.includes('FACTURA')
+        lineaUpper.includes('FACTURA') ||
+        lineaUpper.includes('FECHA') ||
+        lineaUpper.includes('RIF') ||
+        lineaUpper.includes('SENIAT')
       ) {
         continue;
       }
 
-      if (linea.match(/bs[:.\s]*\d+/i) || linea.includes('X Bs')) {
+      // Flexibilizamos el Match: Si tiene "Bs", "BS", "x" o simplemente es una línea con texto medio largo
+      if (lineaUpper.includes('BS') || lineaUpper.includes('X') || (lineaUpper.length > 4 && lineaUpper.length < 50)) {
         let textoLimpio = linea
-          .replace(/[\d.,]+/g, '') 
-          .replace(/(?:bs|exento|iva|x|\(e\))/gi, '') 
-          .replace(/[^\w\sáéíóúÁÉÍÓÚñÑ]/g, '') 
+          .replace(/[\d.,]+/g, '') // Quita números
+          .replace(/(?:bs|exento|iva|x|\(e\)|tg|tarjeta|debito|efectivo|subttl)/gi, '') // Quita palabras administrativas
+          .replace(/[^\w\sáéíóúÁÉÍÓÚñÑ]/g, '') // Quita símbolos y etiquetas html rotas
+          .replace(/\s+/g, ' ') // Colapsa espacios
           .trim()
           .toLowerCase();
 
-        if (textoLimpio.length > 3) {
+        // Evitamos meter palabras residuales vacías o muy cortas (como "td")
+        if (textoLimpio.length > 3 && textoLimpio !== 'td') {
           productosEncontrados.push(textoLimpio);
         }
       }
     }
 
+    // --- CAMBIO CLAVE / SALVAVIDAS ---
+    let textoParaClasificar = productosEncontrados.join(' ').trim();
 
-    const textoParaClasificar = productosEncontrados.join(' ');
+    // [ESTRATEGIA DE RESPALDO]: Si el filtro por líneas de productos falló y dio "", 
+    // usamos todo el texto de la factura limpio para que el NLP tenga contexto (como el nombre del proveedor "PANADERIA")
+    if (!textoParaClasificar && textoFactura) {
+      console.log("[SGAF - NLP] Alerta: No se aislaron productos individuales. Usando texto completo sanetizado como respaldo.");
+      textoParaClasificar = textoFactura
+        .replace(/[\d.,]+/g, '')
+        .replace(/(?:bs|exento|iva|x|\(e\)|cliente|rif|factura|fecha|hora|total|efectivo|debito|tarjeta|td)/gi, '')
+        .replace(/[^\w\sáéíóúÁÉÍÓÚñÑ]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+    }
 
     console.log(`Texto enviado a NLP para clasificar: "${textoParaClasificar}"`);
 
@@ -71,6 +95,7 @@ async function clasificarTexto(textoFactura) {
       return { categoria: 'Sin categoría', confianza: 0.00 };
     }
 
+    // Procesamiento formal en el Manager de node-nlp
     const resultado = await manager.process('es', textoParaClasificar);
 
     if (!resultado.intent || resultado.intent === 'None' || resultado.score < 0.4) {
@@ -87,6 +112,7 @@ async function clasificarTexto(textoFactura) {
     return { categoria: 'Sin categoría', confianza: 0.00 };
   }
 }
+
 
 module.exports = {
   entrenarModelo,

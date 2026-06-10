@@ -44,6 +44,7 @@ module.exports = [
       "carpeta",
       "lapiz",
       "cuaderno",
+      "sobre",
       "boligrafo"
     ]
   }
