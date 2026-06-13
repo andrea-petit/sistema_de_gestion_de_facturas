@@ -8,10 +8,13 @@
   },
   "dependencies": {
     "@llamaindex/llama-cloud": "^2.8.0",
+    "bcrypt": "^6.0.0",
     "cloudinary": "^1.41.3",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^4.22.2",
     "express-session": "^1.19.0",
+    "jsonwebtoken": "^9.0.3",
     "llamaindex": "^0.12.1",
     "multer": "^1.4.5-lts.1",
     "node-nlp": "^5.0.0-alpha.5",

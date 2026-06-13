@@ -1,3 +1,4 @@
+const rutas_autenticacion = require('./routes/rutas_autenticacion');
 require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
@@ -7,17 +8,20 @@ const fs = require('fs');
 const { entrenarModelo, clasificarTexto } = require('./services/nlpClassifier');
 const { extraerProveedorYDireccion } = require('./services/facturaParser');
 const facturaRoutes = require('./routes/facturas_routes');
+const cors = require('cors');
 const app = express();
+app.use(express.json());
+app.use(cors());
 const PORT = process.env.PORT || 3000;
 
 const upload = multer({ dest: 'uploads/' });
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
+
 app.use(express.urlencoded({ extended: true }));
 app.use('/api', facturaRoutes);
-
-
+app.use('/api/auth', rutas_autenticacion);
+app.use('/api/login', require('./routes/loginroutes'));
 
 async function extraerDatosFactura(imagePath) {
   try {
