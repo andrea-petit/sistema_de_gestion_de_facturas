@@ -52,7 +52,7 @@
         </div>
 
 
-        <a href="/index.html" class="btn-sistema">Entrar al Extractor de Facturas ➡️</a>
+        <a href="/dashboard" class="btn-sistema">Entrar al Extractor de Facturas ➡️</a>
 
         <button class="btn" style="background: #7f8c8d; margin-top: 15px; padding: 8px;" onclick="window.location.reload()">Cerrar Sesión</button>
     </div>
@@ -72,8 +72,9 @@
 
             try {
                 // Llama a tu endpoint del backend
-                const respuesta = await fetch('http://localhost:3000/api/login', {
+                const respuesta = await fetch('/api/login', {
                     method: 'POST',
+                    credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ nombre, contrasena })
                 });

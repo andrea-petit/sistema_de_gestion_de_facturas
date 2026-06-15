@@ -261,6 +261,17 @@ const facturaModel = {
                 resolve(results.rows);
             });
         });
+    },
+
+    getFacturasByFechaEmision(fechaEmision) {
+        return new Promise((resolve, reject) => {
+            pool.query('SELECT * FROM compras WHERE fecha_emision = $1', [fechaEmision], (error, results) => {
+                if (error) {
+                    return reject(error);
+                }
+                resolve(results.rows);
+            });
+        });
     }
         
 

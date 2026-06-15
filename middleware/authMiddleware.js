@@ -1,7 +1,6 @@
-const session = require('express-session');
-
 const authMiddleware = (req, res, next) => {
-  if (!req.session.userId) {
+  // Accept either a stored `user` object or a `userId` property
+  if (!req.session || (!req.session.user && !req.session.userId)) {
     return res.status(401).json({ error: 'Acceso no autorizado' });
   }
   next();

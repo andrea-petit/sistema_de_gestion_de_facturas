@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGAF - Sistema de Gestión Automatizada de Facturación</title>
+    <style>
+        :root { 
+            --primary: #2563eb; 
+            --primary-hover: #1d4ed8; 
+            --success: #16a34a;
+            --warning: #ea580c;
+            --bg: #f8fafc; 
+            --card: #ffffff; 
+            --text: #1e293b; 
+            --text-muted: #64748b;
+            --border: #e2e8f0; 
+            --sidebar-bg: #0f172a;
+            --sidebar-text: #f1f5f9;
+            --sidebar-hover: #1e293b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, sans-serif; background-color: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+        /* --- Layout --- */
+        .sidebar { width: 260px; background-color: var(--sidebar-bg); color: var(--sidebar-text); display: flex; flex-direction: column; height: 100%; flex-shrink: 0; }
+        .sidebar-brand { padding: 24px; font-size: 20px; font-weight: bold; border-bottom: 1px solid var(--sidebar-hover); color: #38bdf8; letter-spacing: 0.5px; }
+        .sidebar-menu { flex: 1; padding: 15px 0; overflow-y: auto; }
+        .menu-item { position: relative; }
+        .menu-btn { width: 100%; background: none; border: none; color: var(--sidebar-text); padding: 12px 24px; text-align: left; font-size: 15px; font-weight: 500; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .menu-btn:hover { background-color: var(--sidebar-hover); }
+        .menu-btn::after { content: '▼'; font-size: 10px; color: var(--text-muted); transition: transform 0.2s; }
+        .menu-item.active .menu-btn::after { transform: rotate(-180deg); }
+        .submenu { display: none; background-color: #0b0f19; padding: 5px 0; }
+        .menu-item.active .submenu { display: block; }
+        .submenu-link { display: block; padding: 10px 24px 10px 40px; color: #94a3b8; text-decoration: none; font-size: 14px; }
+        .submenu-link:hover, .submenu-link.active { color: white; background-color: var(--sidebar-hover); }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .top-bar { height: 60px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 30px; font-weight: 500; }
+        .content-body { flex: 1; padding: 30px; overflow-y: auto; }
+        .view-panel { display: none; }
+        .view-panel.active { display: block; }
+
+        /* --- UI Elements --- */
+        .container-box { max-width: 750px; background: var(--card); padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+        h2 { font-size: 22px; color: #0f172a; margin-bottom: 8px; }
+        .description { color: var(--text-muted); margin-bottom: 24px; font-size: 15px; }
+
+        .upload-section { border: 2px dashed #cbd5e1; padding: 35px; text-align: center; border-radius: 8px; background: #f1f5f9; cursor: pointer; margin-bottom: 20px; }
+        .upload-section:hover { border-color: var(--primary); background: #eff6ff; }
+        input[type="file"] { display: none; }
+        
+        .btn { background-color: var(--primary); color: white; border: none; padding: 12px 20px; font-size: 15px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: 600; transition: background 0.2s; }
+        .btn:hover { background-color: var(--primary-hover); }
+        .btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
+        .btn-success { background-color: var(--success); margin-top: 15px; }
+        .btn-success:hover { background-color: #15803d; }
+        
+        .loading { display: none; text-align: center; margin: 15px 0; color: var(--primary); font-weight: bold; }
+        .result-section { display: none; margin-top: 25px; border-top: 2px solid var(--border); padding-top: 20px; }
+        
+        /* --- Mensajes de Estado Interno --- */
+        .status-alert { padding: 12px 15px; border-radius: 6px; font-size: 14px; font-weight: 500; margin-bottom: 20px; display: none; }
+        .status-alert.warning { display: block; background-color: #fff7ed; color: var(--warning); border: 1px solid #ffedd5; }
+        .status-alert.success { display: block; background-color: #f0fdf4; color: var(--success); border: 1px solid #dcfce7; }
+
+        /* --- Formulario de Verificación del Usuario --- */
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+        .form-group label { font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 6px; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; font-family: inherit; color: #0f172a; }
+        .form-group input:focus { outline: 2px solid var(--primary); }
+        .form-group input.missing-field { border-color: var(--warning); background-color: #fffaf8; }
+
+        .raw-text { background: #1e293b; color: #38bdf8; padding: 15px; border-radius: 6px; max-height: 150px; overflow-y: auto; font-size: 12px; white-space: pre-wrap; margin-top: 10px; }
+        .placeholder-view { background: var(--card); padding: 40px; border-radius: 8px; text-align: center; border: 1px dashed var(--border); color: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-brand">El Faro - SGAF</div>
+        <div class="sidebar-menu">
+            <div class="menu-item">
+                <button class="menu-btn">Facturas</button>
+                <div class="submenu">
+                    <a href="#subir-facturas" class="submenu-link active" onclick="switchView('subir-facturas', this)">Subir Facturas</a>
+                    <a href="#ver-facturas" class="submenu-link" onclick="switchView('ver-facturas', this)">Ver Facturas</a>
+                    <a href="#buscar-factura" class="submenu-link" onclick="switchView('buscar-factura', this)">Buscar Factura</a>
+                    <a href="#editar-factura" class="submenu-link" onclick="switchView('editar-factura', this)">Editar Factura</a>
+                </div>
+            </div>
+            <div class="menu-item"><button class="menu-btn">Gastos</button><div class="submenu"><a href="#categoria-gastos" class="submenu-link" onclick="switchView('categoria-gastos', this)">Categoría de Gastos</a></div></div>
+            <div class="menu-item"><button class="menu-btn">Retenciones</button><div class="submenu"><a href="#generar-retencion" class="submenu-link" onclick="switchView('generar-retencion', this)">Generar Retención</a></div></div>
+            <div class="menu-item"><button class="menu-btn">Proveedores</button><div class="submenu"><a href="#ver-proveedores" class="submenu-link" onclick="switchView('ver-proveedores', this)">Ver Proveedores</a></div></div>
+            <div class="menu-item"><button class="menu-btn">Reportes</button><div class="submenu"><a href="#generar-reporte" class="submenu-link" onclick="switchView('generar-reporte', this)">Generar Reporte</a></div></div>
+            <div class="menu-item"><button class="menu-btn">Historial</button><div class="submenu"><a href="#ver-historial" class="submenu-link" onclick="switchView('ver-historial', this)">Ver Historial</a></div></div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="top-bar" id="topBarTitle">Facturas > Subir Facturas</div>
+        <div class="content-body">
+
+            <div id="view-subir-facturas" class="view-panel active">
+                <div class="container-box">
+                    <h2>Extracción de Datos con LlamaCloud</h2>
+                    <p class="description">Sube la imagen digitalizada del comprobante de compras para auditar y verificar su contenido fiscal.</p>
+                    
+                    <form id="uploadForm">
+                        <div class="upload-section" id="dropZone">
+                            <span id="uploadLabel">Haz clic para seleccionar la imagen de la factura</span>
+                            <input type="file" id="fileInput" name="factura" accept="image/*" required>
+                        </div>
+                        <button type="submit" class="btn" id="btnSubmit">Procesar Factura</button>
+                    </form>
+                    
+                    <div class="loading" id="loadingText">Procesando imagen con IA... Esto puede tomar unos segundos.</div>
+                    
+                    <div class="result-section" id="resultSection">
+                        
+                        <div id="statusAlert" class="status-alert"></div>
+
+                        <h3 style="color: #0f172a; margin-bottom: 15px;">Formulario de Verificación Fiscal:</h3>
+                        
+                        <form id="verificationForm">
+                            <input type="hidden" id="valImgUrl">
+                            
+                            <div class="form-group">
+                                <label>Proveedor:</label>
+                                <input type="text" id="valProveedor" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Dirección del Emisor:</label>
+                                <input type="text" id="valDireccion" required>
+                            </div>
+                            <div class="form-group">
+                                <label>RIF Emisor:</label>
+                                <input type="text" id="valRif" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Nro. Factura:</label>
+                                <input type="text" id="valNro" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Nro. Control / Serial:</label>
+                                <input type="text" id="valControl" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha de Emisión:</label>
+                                <input type="text" id="valFecha" placeholder="DD-MM-AAAA" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Monto Total (Bs):</label>
+                                <input type="number" step="0.01" id="valTotal" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Categoría Asignada por NLP:</label>
+                                <input type="text" id="valCategoria" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-success" id="btnConfirmar">Confirmar y Guardar en Sistema</button>
+                        </form>
+                        
+                        <h4 style="color: #0f172a; margin-top: 25px; margin-bottom: 5px;">Texto Plano de Respaldo (Markdown):</h4>
+                        <div class="raw-text" id="resTextoPlano"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-ver-facturas" class="view-panel"><div class="placeholder-view"><h3>Módulo: Ver Facturas</h3><p>Módulo en desarrollo para el Libro de Compras.</p></div></div>
+            <div id="view-buscar-factura" class="view-panel"><div class="placeholder-view"><h3>Módulo: Buscar Factura</h3><p>Filtros de auditoría interna.</p></div></div>
+            <div id="view-editar-factura" class="view-panel"><div class="placeholder-view"><h3>Módulo: Editar Factura</h3><p>Modificación manual de datos fiscales.</p></div></div>
+            <div id="view-categoria-gastos" class="view-panel"><div class="placeholder-view"><h3>Módulo: Categoría de Gastos</h3><p>Clasificación del NLP Manager.</p></div></div>
+            <div id="view-generar-retencion" class="view-panel"><div class="placeholder-view"><h3>Módulo: Generar Retención</h3><p>Cálculos de retención del IVA.</p></div></div>
+            <div id="view-ver-proveedores" class="view-panel"><div class="placeholder-view"><h3>Módulo: Ver Proveedores</h3><p>Directorio de RIFs registrados.</p></div></div>
+            <div id="view-generar-reporte" class="view-panel"><div class="placeholder-view"><h3>Módulo: Generar Reporte</h3><p>Exportación de archivos consolidados.</p></div></div>
+            <div id="view-ver-historial" class="view-panel"><div class="placeholder-view"><h3>Módulo: Ver Historial</h3><p>Trazabilidad del sistema.</p></div></div>
+
+        </div>
+    </div>
+
+    <script src="./js/main.js"></script>
+</body>
+</html>

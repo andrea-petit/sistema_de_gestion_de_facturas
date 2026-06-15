@@ -25,9 +25,16 @@ const ingresarUsuario = async (req, res) => {
         }
 
         // 3. ¡Acceso concedido!
+        // Guardamos usuario en sesión para permitir acceso a /dashboard
+        if (req && req.session) {
+            req.session.user = { nombre: usuarioDB.nombre_usuario,
+                id: usuarioDB.id };
+        }
+
         return res.status(200).json({
             ok: true,
             msg: `¡Bienvenido, ${usuarioDB.nombre_usuario}!`,
+            token: req.sessionID
         });
 
     } catch (error) {

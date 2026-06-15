@@ -26,18 +26,25 @@ cloudinary.config({
 const upload = multer({ dest: 'uploads/' });
 
 const facturasController = {
-    async createFactura(req, res) {
+    
+    // =================================================================
+    // PASO 1: RECIBIR IMAGEN Y EXTRAER DATOS CON IA (No persiste en BD)
+    // =================================================================
+    async procesarOcr(req, res) {
       try {
         if (!req.file) {
           return res.status(400).json({ error: 'Por favor, sube una imagen de factura' });
         }
 
+        // 1. Ejecutar servicio OCR con LlamaCloud
         const datosExtraidos = await extraerDatosFactura(req.file.path);
 
+        // 2. Validar credenciales de Cloudinary
         if (!cloudName || !cloudApiKey || !cloudApiSecret) {
           return res.status(500).json({ error: 'Cloudinary no está configurado correctamente en .env' });
         }
 
+        // 3. Subir imagen de respaldo a Cloudinary
         const uploadResult = await cloudinary.uploader.upload(req.file.path, {
           folder: 'facturas',
           resource_type: 'image',
@@ -46,53 +53,100 @@ const facturasController = {
           overwrite: false
         });
 
+        // 4. Eliminar archivo temporal local
         await unlinkAsync(req.file.path).catch(() => {});
 
-        const proveedorNombre = datosExtraidos.proveedor || 'Proveedor desconocido';
-        let proveedor = await proveedoresModel.getProveedorByNameOrRif(proveedorNombre, datosExtraidos.rifEmisor);
+        // 5. Adjuntar la URL de la imagen a los datos extraídos para que el cliente la tenga
+        datosExtraidos.img_url = uploadResult.secure_url;
 
-        if (!proveedor) {
-          const tipo_documento = datosExtraidos.rifEmisor ? datosExtraidos.rifEmisor[0].toUpperCase() : 'J';
-          proveedor = await proveedoresModel.createProveedor({
+        // Devolvemos el resultado al frontend para que lo pinte en los inputs editables
+        return res.status(200).json({
+          mensaje: "Análisis OCR completado. Requiere verificación del usuario.",
+          data: datosExtraidos
+        });
+
+      } catch (error) {
+        // Limpieza de emergencia del archivo temporal si ocurre un fallo intermedio
+        if (req.file && req.file.path) {
+          await unlinkAsync(req.file.path).catch(() => {});
+        }
+        return res.status(500).json({ error: error.message });
+      }
+    },
+
+    // =================================================================
+    // PASO 2: CONFIRMACIÓN HUMANA Y GUARDADO DEFINITIVO EN BD
+    // =================================================================
+    async confirmarYGuardar(req, res) {
+      try {
+        // Los datos ya no vienen del OCR, vienen limpios desde los inputs del req.body
+        const {
+          proveedor,
+          direccion,
+          rifEmisor,
+          nroFactura,
+          nroControl,
+          fechaEmision,
+          montoTotal,
+          categoria,
+          img_url // Recuperamos la URL que guardamos en el paso 1
+        } = req.body;
+
+        if (!proveedor || !rifEmisor || !nroFactura) {
+          return res.status(400).json({ error: 'Proveedor, RIF y Número de Factura son obligatorios para el Libro de Compras.' });
+        }
+
+        // 1. Gestión Automática de Proveedores
+        let proveedorDb = await proveedoresModel.getProveedorByNameOrRif(proveedor, rifEmisor);
+
+        if (!proveedorDb) {
+          const tipo_documento = rifEmisor ? rifEmisor[0].toUpperCase() : 'J';
+          proveedorDb = await proveedoresModel.createProveedor({
             tipo_documento,
-            rif: datosExtraidos.rifEmisor || 'S/RIF',
-            razon_social: proveedorNombre,
-            direccion: datosExtraidos.direccionProveedor || null,
+            rif: rifEmisor,
+            razon_social: proveedor,
+            direccion: direccion || null,
             telefono: null,
             tipo_contribuyente: 'Ordinario'
           });
         }
 
-        const categoriaId = datosExtraidos.categoria || await categoriasModel.getOrCreateCategoryId('Sin categoría');
+        // 2. Gestión de Categoría con el NLP Manager
+        const categoriaId = await categoriasModel.getOrCreateCategoryId(categoria || 'Sin categoría');
+
+        // 3. Preparación del objeto estructurado para la base de datos
+        // Nota: El desglose exacto de IVA se calcula en el servicio de OCR o puedes recalcularlo aquí
         const facturaData = {
-          proveedor_id: proveedor.id,
-          fecha_emision: datosExtraidos.fechaEmision,
-          numero_factura: datosExtraidos.nroFactura || 'N/A',
-          numero_control: datosExtraidos.nroControl || datosExtraidos.nroFactura || 'N/A',
-          monto_total: datosExtraidos.montoTotal || 0.00,
-          monto_exento: datosExtraidos.montoExento || 0.00,
-          monto_afecto_iva: datosExtraidos.montoAfectoIva || 0.00,
-          monto_iva: datosExtraidos.montoIva || 0.00,
+          proveedor_id: proveedorDb.id,
+          fecha_emision: fechaEmision,
+          numero_factura: nroFactura,
+          numero_control: nroControl || nroFactura,
+          monto_total: montoTotal || 0.00,
+          monto_exento: req.body.montoExento || 0.00, 
+          monto_afecto_iva: req.body.montoAfectoIva || 0.00,
+          monto_iva: req.body.montoIva || 0.00,
           categoria: categoriaId,
           porcentaje_retencion: req.body.porcentaje_retencion || 0.00,
           comprobante_retencion: req.body.comprobante_retencion || null,
-          img_url: uploadResult.secure_url
+          img_url: img_url
         };
 
+        // 4. Protección contra duplicados en el Libro de Compras
         const facturaExistente = await facturaModel.getFacturaByProveedorAndNumero(facturaData.proveedor_id, facturaData.numero_factura);
         if (facturaExistente) {
-          return res.status(409).json({ error: 'Ya existe una factura con ese número para este proveedor' });
+          return res.status(409).json({ error: 'Ya existe esta factura registrada para el proveedor indicado.' });
         }
 
+        // 5. Inserción final
         const nuevaFactura = await facturaModel.createFactura(facturaData);
 
-        // Add historial entry only if user info and historialModel are available
+        // 6. Registro de Auditoría en el Historial
         try {
           const usuarioId = req.user && req.user.id ? req.user.id : null;
           await historialModel.addHistorial({
             usuario_id: usuarioId,
             tabla_afectada: 'facturas',
-            registro_id: nuevaFactura && nuevaFactura.id ? nuevaFactura.id : null,
+            registro_id: nuevaFactura?.id || null,
             accion: 'CREATE',
             valor_anterior: null,
             valor_nuevo: JSON.stringify(facturaData)
@@ -102,12 +156,9 @@ const facturasController = {
         }
 
         return res.status(200).json({
-          mensaje: "Factura procesada y guardada con éxito",
-          data: datosExtraidos
+          mensaje: "Factura verificada e insertada en el Libro de Compras con éxito",
+          id: nuevaFactura?.id
         });
-
-
-  
 
       } catch (error) {
         return res.status(500).json({ error: error.message });
@@ -134,8 +185,23 @@ const facturasController = {
       }
     },
 
+    async getFacturasByFechaEmision(req, res) {
+      try {
+        const fechaEmision = req.query.fecha_emision;
+        if (!fechaEmision) {
+          return res.status(400).json({ error: 'La fecha de emisión es requerida' });
+        }
 
+        const facturas = await facturaModel.getFacturasByFechaEmision(fechaEmision);
 
+        return res.status(200).json({
+          mensaje: 'Facturas encontradas',
+          data: facturas
+        });
+      } catch (error) {
+        return res.status(500).json({ error: error.message });
+      }
+    }
 
 };
 

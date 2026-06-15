@@ -1,6 +1,7 @@
 const rutas_autenticacion = require('./routes/rutas_autenticacion');
 require('dotenv').config();
 const express = require('express');
+const session = require('express-session');
 const multer = require('multer');
 const Tesseract = require('tesseract.js');
 const path = require('path');
@@ -11,7 +12,8 @@ const facturaRoutes = require('./routes/facturas_routes');
 const cors = require('cors');
 const app = express();
 app.use(express.json());
-app.use(cors());
+// Allow cross-origin requests with credentials (cookies) when needed
+app.use(cors({ origin: true, credentials: true }));
 const PORT = process.env.PORT || 3000;
 
 const upload = multer({ dest: 'uploads/' });
@@ -19,9 +21,30 @@ const upload = multer({ dest: 'uploads/' });
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(express.urlencoded({ extended: true }));
+app.use(session({
+  secret: 'secret-key',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false }
+}));
+
 app.use('/api', facturaRoutes);
 app.use('/api/auth', rutas_autenticacion);
 app.use('/api/login', require('./routes/loginroutes'));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+app.get('/dashboard', (req, res) => {
+    if (req.session && req.session.user) {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+    } else {
+        res.redirect('/');
+    }
+});
+
+
 
 async function extraerDatosFactura(imagePath) {
   try {
