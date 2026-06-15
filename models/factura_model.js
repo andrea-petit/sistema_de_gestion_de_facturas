@@ -30,13 +30,84 @@ const facturaModel = {
             ivaCalculado = 0.00;
         }
 
+        const porcentajeRetencion = Number.isFinite(Number(facturaData.porcentaje_retencion))
+            ? Number(facturaData.porcentaje_retencion)
+            : 0.00;
+
+        let montoRetencion = 0.00;
+        if (porcentajeRetencion > 0 && ivaCalculado > 0) {
+            montoRetencion = Number((ivaCalculado * porcentajeRetencion / 100).toFixed(2));
+        }
+
         return {
             porcentaje_alicuota: 16.00,
             base_imponible: baseImponible,
             monto_iva: ivaCalculado,
-            porcentaje_retencion: Number(facturaData.porcentaje_retencion || 0.00),
-            monto_retencion: Number(facturaData.monto_retencion || 0.00)
+            porcentaje_retencion: Number(porcentajeRetencion.toFixed(2)),
+            monto_retencion: montoRetencion
         };
+    },
+
+    normalizeRetencionPorcentaje(porcentajeRetencion) {
+        const valor = Number(porcentajeRetencion || 0);
+        return Number.isFinite(valor) ? Number(valor.toFixed(2)) : 0.00;
+    },
+
+    isValidRetentionSelection(porcentajeRetencion) {
+        return Number.isFinite(porcentajeRetencion) && porcentajeRetencion >= 1 && porcentajeRetencion <= 5;
+    },
+
+    getCompraImpuestosByCompraId(compraId) {
+        return new Promise((resolve, reject) => {
+            pool.query('SELECT * FROM compra_impuestos WHERE compra_id = $1', [compraId], (error, results) => {
+                if (error) {
+                    return reject(error);
+                }
+                resolve(results.rows);
+            });
+        });
+    },
+
+    createRetencionFromFactura(compraId, porcentajeRetencion) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const porcentaje = Number(porcentajeRetencion);
+                if (!this.isValidRetentionSelection(porcentaje)) {
+                    return reject(new Error('El porcentaje de retención debe ser un valor entre 1 y 5')); 
+                }
+
+                const impuestos = await this.getCompraImpuestosByCompraId(compraId);
+                if (!impuestos || impuestos.length === 0) {
+                    return reject(new Error('No se encontró información de impuestos para esta factura')); 
+                }
+
+                const impuestoBase = impuestos.find((item) => Number(item.porcentaje_retencion) === 0) || impuestos[0];
+                const montoIva = Number(impuestoBase.monto_iva || 0.00);
+                if (montoIva <= 0) {
+                    return reject(new Error('No hay monto de IVA disponible para generar retención')); 
+                }
+
+                const montoRetencion = Number((montoIva * porcentaje / 100).toFixed(2));
+                const queryText = 'INSERT INTO compra_impuestos (compra_id, porcentaje_alicuota, base_imponible, monto_iva, porcentaje_retencion, monto_retencion) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *';
+                const queryValues = [
+                    compraId,
+                    impuestoBase.porcentaje_alicuota,
+                    impuestoBase.base_imponible,
+                    impuestoBase.monto_iva,
+                    porcentaje,
+                    montoRetencion
+                ];
+
+                pool.query(queryText, queryValues, (error, results) => {
+                    if (error) {
+                        return reject(error);
+                    }
+                    resolve(results.rows && results.rows[0] ? results.rows[0] : null);
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
     },
 
     createCompraImpuesto(compraId, impuestoData) {
@@ -71,9 +142,18 @@ const facturaModel = {
                                 ? 'INSERT INTO compras (proveedor_id, fecha_emision, numero_factura, numero_control, monto_total, categoria, img_url) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *'
                                 : 'INSERT INTO compras (proveedor_id, comprobante_retencion, fecha_emision, numero_factura, numero_control, monto_total, categoria, img_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *';
 
+                            const porcentajeRetencionUsuario = self.normalizeRetencionPorcentaje(facturaData.porcentaje_retencion);
+                            if (tipoContribuyente === 'Ordinario') {
+                                facturaData.porcentaje_retencion = self.isValidRetentionSelection(porcentajeRetencionUsuario)
+                                    ? porcentajeRetencionUsuario
+                                    : 0.00;
+                            } else {
+                                facturaData.porcentaje_retencion = 75.00;
+                            }
+
                             const queryValues = tipoContribuyente === 'Ordinario'
                                 ? [facturaData.proveedor_id, facturaData.fecha_emision, facturaData.numero_factura, facturaData.numero_control, facturaData.monto_total, facturaData.categoria, facturaData.img_url]
-                                : [facturaData.proveedor_id, facturaData.comprobante_retencion, facturaData.fecha_emision, facturaData.numero_factura, facturaData.numero_control, facturaData.monto_total, facturaData.categoria, facturaData.img_url];
+                                : [facturaData.proveedor_id, facturaData.comprobante_retencion || null, facturaData.fecha_emision, facturaData.numero_factura, facturaData.numero_control, facturaData.monto_total, facturaData.categoria, facturaData.img_url];
 
                             pool.query(queryText, queryValues, (error, results) => {
                                 if (error) {

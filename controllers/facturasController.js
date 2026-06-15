@@ -74,6 +74,8 @@ const facturasController = {
           monto_afecto_iva: datosExtraidos.montoAfectoIva || 0.00,
           monto_iva: datosExtraidos.montoIva || 0.00,
           categoria: categoriaId,
+          porcentaje_retencion: req.body.porcentaje_retencion || 0.00,
+          comprobante_retencion: req.body.comprobante_retencion || null,
           img_url: uploadResult.secure_url
         };
 
@@ -107,6 +109,26 @@ const facturasController = {
 
   
 
+      } catch (error) {
+        return res.status(500).json({ error: error.message });
+      }
+    },
+
+    async addRetencionAFactura(req, res) {
+      try {
+        const facturaId = req.params.id;
+        const porcentajeRetencion = Number(req.body.porcentaje_retencion);
+
+        if (!Number.isFinite(porcentajeRetencion) || porcentajeRetencion < 1 || porcentajeRetencion > 5) {
+          return res.status(400).json({ error: 'El porcentaje de retención debe ser un número entre 1 y 5' });
+        }
+
+        const nuevaRetencion = await facturaModel.createRetencionFromFactura(facturaId, porcentajeRetencion);
+
+        return res.status(200).json({
+          mensaje: 'Retención generada con éxito',
+          data: nuevaRetencion
+        });
       } catch (error) {
         return res.status(500).json({ error: error.message });
       }
