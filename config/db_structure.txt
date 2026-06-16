@@ -63,7 +63,7 @@ CREATE TABLE public.historial_cambios (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   usuario_id uuid,
   tabla_afectada character varying,
-  registro_id smallint,
+  registro_id uuid,
   accion character varying,
   valor_anterior jsonb,
   valor_nuevo jsonb,

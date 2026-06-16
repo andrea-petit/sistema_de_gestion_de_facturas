@@ -170,13 +170,94 @@
             </div>
 
             <div id="view-ver-facturas" class="view-panel"><div class="placeholder-view"><h3>Módulo: Ver Facturas</h3><p>Módulo en desarrollo para el Libro de Compras.</p></div></div>
-            <div id="view-buscar-factura" class="view-panel"><div class="placeholder-view"><h3>Módulo: Buscar Factura</h3><p>Filtros de auditoría interna.</p></div></div>
+            <div id="view-buscar-factura" class="view-panel">
+                <div class="container-box" style="max-width: 900px;">
+                    <h2>Consulta y Auditoría de Documentos Digitales</h2>
+                    <p class="description">Selecciona una fecha de emisión para listar los comprobantes y auditar su imagen de respaldo en Cloudinary.</p>
+                    
+                    <div style="display: flex; gap: 15px; margin-bottom: 25px; background: #f1f5f9; padding: 15px; border-radius: 8px;">
+                        <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                            <label style="margin-bottom: 4px;">Fecha de Emisión:</label>
+                            <input type="date" id="searchFecha" style="background: #ffffff;">
+                        </div>
+                        <button type="button" class="btn" id="btnBuscarFacturas" style="width: auto; align-self: flex-end; padding: 10px 25px;">
+                            Buscar Facturas
+                        </button>
+                    </div>
+
+                    <div style="display: flex; gap: 20px; min-height: 350px;">
+                        
+                        <div style="flex: 1; border: 1px solid var(--border); border-radius: 8px; background: #ffffff; overflow: hidden;">
+                            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;" id="tablaFacturas">
+                                <thead style="background: #f8fafc; border-bottom: 2px solid var(--border); color: #475569;">
+                                    <tr>
+                                        <th style="padding: 12px 15px; font-weight: 600;">Nro. Factura</th>
+                                        <th style="padding: 12px 15px; font-weight: 600;">Proveedor</th>
+                                        <th style="padding: 12px 15px; font-weight: 600; text-align: right;">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="listaFacturasCuerpo">
+                                    <tr>
+                                        <td colspan="3" style="padding: 30px; text-align: center; color: var(--text-muted);">
+                                            Selecciona una fecha y presiona buscar para cargar datos.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div style="width: 380px; border: 1px solid var(--border); border-radius: 8px; background: #f8fafc; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;" id="visorFactura">
+                            <p id="visorPlaceholder" style="color: var(--text-muted); text-align: center; font-size: 14px;">
+                                Selecciona una factura de la lista para previsualizar el documento digitalizado.
+                            </p>
+                            <div id="visorContenido" style="display: none; width: 100%; height: 100%;">
+                                <h4 id="visorTitulo" style="font-size: 14px; margin-bottom: 10px; color: #0f172a; word-break: break-all;"></h4>
+                                <div style="width: 100%; height: 320px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: #ffffff; display: flex; justify-content: center; align-items: center;">
+                                    <img id="imgFacturaDigital" src="" alt="Comprobante Fiscal" style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: pointer;" onclick="window.open(this.src, '_blank')">
+                                </div>
+                                <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 8px;">Haz clic sobre la imagen para abrirla en tamaño completo.</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
             <div id="view-editar-factura" class="view-panel"><div class="placeholder-view"><h3>Módulo: Editar Factura</h3><p>Modificación manual de datos fiscales.</p></div></div>
             <div id="view-categoria-gastos" class="view-panel"><div class="placeholder-view"><h3>Módulo: Categoría de Gastos</h3><p>Clasificación del NLP Manager.</p></div></div>
             <div id="view-generar-retencion" class="view-panel"><div class="placeholder-view"><h3>Módulo: Generar Retención</h3><p>Cálculos de retención del IVA.</p></div></div>
             <div id="view-ver-proveedores" class="view-panel"><div class="placeholder-view"><h3>Módulo: Ver Proveedores</h3><p>Directorio de RIFs registrados.</p></div></div>
             <div id="view-generar-reporte" class="view-panel"><div class="placeholder-view"><h3>Módulo: Generar Reporte</h3><p>Exportación de archivos consolidados.</p></div></div>
-            <div id="view-ver-historial" class="view-panel"><div class="placeholder-view"><h3>Módulo: Ver Historial</h3><p>Trazabilidad del sistema.</p></div></div>
+            <div id="view-ver-historial" class="view-panel">
+                <div class="container-box" style="max-width: 1000px;">
+                    <h2>Historial de Cambios y Auditoría del Sistema</h2>
+                    <p class="description">Monitoreo en tiempo real de operaciones CREATE, UPDATE y DELETE sobre los módulos del SGAF.</p>
+
+                    <div style="border: 1px solid var(--border); border-radius: 8px; background: #ffffff; overflow: hidden; margin-bottom: 20px;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                            <thead style="background: #f8fafc; border-bottom: 2px solid var(--border); color: #475569;">
+                                <tr>
+                                    <th style="padding: 12px 15px;">Fecha / Hora</th>
+                                    <th style="padding: 12px 15px;">Usuario</th>
+                                    <th style="padding: 12px 15px;">Acción</th>
+                                    <th style="padding: 12px 15px;">Módulo</th>
+                                    <th style="padding: 12px 15px;">ID Reg.</th>
+                                    <th style="padding: 12px 15px;">Detalles (JSON)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaHistorialCuerpo">
+                                </tbody>
+                        </table>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: #f1f5f9; padding: 10px 20px; border-radius: 6px;">
+                        <span id="infoPaginacion" style="font-size: 13px; color: #475569;">Cargando información de páginas...</span>
+                        <div style="display: flex; gap: 10px;">
+                            <button type="button" class="btn" id="btnPrevHistorial" style="width: auto; padding: 6px 15px; background: #64748b;">⬅️ Anterior</button>
+                            <button type="button" class="btn" id="btnNextHistorial" style="width: auto; padding: 6px 15px;">Siguiente ➡️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
         </div>
     </div>

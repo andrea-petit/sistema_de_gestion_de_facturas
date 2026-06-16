@@ -9,6 +9,7 @@ const fs = require('fs');
 const { entrenarModelo, clasificarTexto } = require('./services/nlpClassifier');
 const { extraerProveedorYDireccion } = require('./services/facturaParser');
 const facturaRoutes = require('./routes/facturas_routes');
+const historialRoutes = require('./routes/historial_routes');
 const cors = require('cors');
 const app = express();
 app.use(express.json());
@@ -28,6 +29,7 @@ app.use(session({
   cookie: { secure: false }
 }));
 
+app.use('/api', historialRoutes);
 app.use('/api', facturaRoutes);
 app.use('/api/auth', rutas_autenticacion);
 app.use('/api/login', require('./routes/loginroutes'));

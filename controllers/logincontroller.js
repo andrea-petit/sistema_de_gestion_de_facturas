@@ -25,10 +25,14 @@ const ingresarUsuario = async (req, res) => {
         }
 
         // 3. ¡Acceso concedido!
-        // Guardamos usuario en sesión para permitir acceso a /dashboard
+        // Guardamos usuario en sesión para permitir acceso a /dashboard y auditorías
         if (req && req.session) {
-            req.session.user = { nombre: usuarioDB.nombre_usuario,
-                id: usuarioDB.id };
+            req.session.user = {
+                id: usuarioDB.id,
+                nombre: usuarioDB.nombre_usuario
+            };
+            req.session.userId = usuarioDB.id;
+            req.session.userNombre = usuarioDB.nombre_usuario;
         }
 
         return res.status(200).json({

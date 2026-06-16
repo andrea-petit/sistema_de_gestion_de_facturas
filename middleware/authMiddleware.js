@@ -1,8 +1,18 @@
 const authMiddleware = (req, res, next) => {
-  // Accept either a stored `user` object or a `userId` property
   if (!req.session || (!req.session.user && !req.session.userId)) {
     return res.status(401).json({ error: 'Acceso no autorizado' });
   }
+
+  // Propagar el usuario autenticado a los controladores
+  if (req.session.user) {
+    req.user = req.session.user;
+  } else if (req.session.userId) {
+    req.user = {
+      id: req.session.userId,
+      nombre: req.session.userNombre || null
+    };
+  }
+
   next();
 };
 

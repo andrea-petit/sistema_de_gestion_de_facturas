@@ -4,9 +4,10 @@ const facturasController = require('../controllers/facturasController');
 const authMiddleware = require('../middleware/authMiddleware');
 const upload = require('multer')({ dest: 'uploads/' });
 
-router.post('/facturas', upload.single('factura'),authMiddleware, facturasController.procesarOcr);
+router.post('/facturas', upload.single('factura'), authMiddleware, facturasController.procesarOcr);
 router.post('/facturas/guardar', authMiddleware, facturasController.confirmarYGuardar);
-router.post('/facturas/:id/retencion',authMiddleware, facturasController.addRetencionAFactura);
+router.put('/facturas/:id', authMiddleware, facturasController.editarFactura);
+router.post('/facturas/:id/retencion', authMiddleware, facturasController.addRetencionAFactura);
 router.get('/facturas', authMiddleware, facturasController.getFacturasByFechaEmision);
 
 

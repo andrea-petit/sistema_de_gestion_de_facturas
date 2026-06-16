@@ -176,6 +176,20 @@ const facturasController = {
 
         const nuevaRetencion = await facturaModel.createRetencionFromFactura(facturaId, porcentajeRetencion);
 
+        try {
+          const usuarioId = req.user && req.user.id ? req.user.id : null;
+          await historialModel.addHistorial({
+            usuario_id: usuarioId,
+            tabla_afectada: 'compra_impuestos',
+            registro_id: nuevaRetencion?.id || null,
+            accion: 'CREATE',
+            valor_anterior: null,
+            valor_nuevo: JSON.stringify(nuevaRetencion)
+          });
+        } catch (histError) {
+          console.error('Error guardando historial de retención:', histError);
+        }
+
         return res.status(200).json({
           mensaje: 'Retención generada con éxito',
           data: nuevaRetencion
@@ -185,23 +199,127 @@ const facturasController = {
       }
     },
 
-    async getFacturasByFechaEmision(req, res) {
+    async editarFactura(req, res) {
       try {
-        const fechaEmision = req.query.fecha_emision;
-        if (!fechaEmision) {
-          return res.status(400).json({ error: 'La fecha de emisión es requerida' });
+        const facturaId = req.params.id;
+        const facturaExistente = await facturaModel.getFacturaById(facturaId);
+
+        if (!facturaExistente) {
+          return res.status(404).json({ error: 'Factura no encontrada.' });
         }
 
-        const facturas = await facturaModel.getFacturasByFechaEmision(fechaEmision);
+        const {
+          proveedor,
+          direccion,
+          rifEmisor,
+          nroFactura,
+          nroControl,
+          fechaEmision,
+          montoTotal,
+          categoria,
+          img_url
+        } = req.body;
+
+        const updateData = {};
+
+        if (proveedor || rifEmisor) {
+          if (!proveedor || !rifEmisor) {
+            return res.status(400).json({ error: 'Proveedor y RIF son obligatorios para actualizar el proveedor.' });
+          }
+
+          let proveedorDb = await proveedoresModel.getProveedorByNameOrRif(proveedor, rifEmisor);
+          if (!proveedorDb) {
+            const tipo_documento = rifEmisor ? rifEmisor[0].toUpperCase() : 'J';
+            proveedorDb = await proveedoresModel.createProveedor({
+              tipo_documento,
+              rif: rifEmisor,
+              razon_social: proveedor,
+              direccion: direccion || null,
+              telefono: null,
+              tipo_contribuyente: 'Ordinario'
+            });
+          }
+
+          updateData.proveedor_id = proveedorDb.id;
+        }
+
+        if (categoria) {
+          updateData.categoria = await categoriasModel.getOrCreateCategoryId(categoria);
+        }
+
+        if (fechaEmision) updateData.fecha_emision = fechaEmision;
+        if (nroFactura) updateData.numero_factura = nroFactura;
+        if (nroControl) updateData.numero_control = nroControl;
+        if (montoTotal !== undefined && montoTotal !== null) updateData.monto_total = Number(montoTotal);
+        if (img_url) updateData.img_url = img_url;
+        if (req.body.montoExento !== undefined) updateData.monto_exento = Number(req.body.montoExento);
+        if (req.body.montoAfectoIva !== undefined) updateData.monto_afecto_iva = Number(req.body.montoAfectoIva);
+        if (req.body.montoIva !== undefined) updateData.monto_iva = Number(req.body.montoIva);
+
+        if (Object.keys(updateData).length === 0) {
+          return res.status(400).json({ error: 'No se envió ningún campo para actualizar.' });
+        }
+
+        const facturaActualizada = await facturaModel.updateFacturaById(facturaId, updateData);
+
+        const valorAnterior = {};
+        const valorNuevo = {};
+        Object.keys(updateData).forEach((campo) => {
+          valorAnterior[campo] = facturaExistente[campo];
+          valorNuevo[campo] = facturaActualizada[campo];
+        });
+
+        try {
+          const usuarioId = req.user && req.user.id ? req.user.id : null;
+          await historialModel.addHistorial({
+            usuario_id: usuarioId,
+            tabla_afectada: 'facturas',
+            registro_id: facturaId,
+            accion: 'UPDATE',
+            valor_anterior: JSON.stringify(valorAnterior),
+            valor_nuevo: JSON.stringify(valorNuevo)
+          });
+        } catch (histError) {
+          console.error('Error guardando historial de edición de factura:', histError);
+        }
 
         return res.status(200).json({
-          mensaje: 'Facturas encontradas',
-          data: facturas
+          mensaje: 'Factura actualizada con éxito.',
+          data: facturaActualizada
         });
       } catch (error) {
         return res.status(500).json({ error: error.message });
       }
-    }
+    },
+
+    // Agregar este método dentro del objeto facturasController de tu controlador de Express
+    async getFacturasByFechaEmision(req, res) {
+      try {
+        const { fecha } = req.query;
+        console.log("-----------------------------------------");
+        console.log("-> FECHA ENVIADA DESDE EL FRONTEND:", fecha); 
+        console.log("-> TIPO DE DATO:", typeof fecha);
+        console.log("-----------------------------------------");
+
+        if (!fecha) {
+          return res.status(400).json({ error: 'El parámetro fecha es requerido para realizar la consulta fiscal.' });
+        }
+
+        console.log(`[SGAF] Consultando facturas del Libro de Compras para la fecha: ${fecha}`);
+
+        const facturas = await facturaModel.getFacturasByFechaEmision(fecha);
+        console.log("-> REGISTROS ENCONTRADOS EN BD:", facturas.length);
+
+        return res.status(200).json({
+          mensaje: `Facturas recuperadas con éxito para el día ${fecha}`,
+          data: facturas
+        });
+
+      } catch (error) {
+        console.error('Error en consulta por fecha de emisión:', error);
+        return res.status(500).json({ error: error.message });
+      }
+    },
 
 };
 

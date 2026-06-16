@@ -241,6 +241,27 @@ const facturaModel = {
         });
     },
 
+    updateFacturaById(id, updateData) {
+        return new Promise((resolve, reject) => {
+            const fields = Object.keys(updateData);
+            if (fields.length === 0) {
+                return resolve(null);
+            }
+
+            const setClauses = fields.map((campo, index) => `${campo} = $${index + 1}`).join(', ');
+            const values = fields.map(campo => updateData[campo]);
+            values.push(id);
+
+            const query = `UPDATE compras SET ${setClauses} WHERE id = $${values.length} RETURNING *`;
+            pool.query(query, values, (error, results) => {
+                if (error) {
+                    return reject(error);
+                }
+                resolve(results.rows && results.rows[0] ? results.rows[0] : null);
+            });
+        });
+    },
+
     getFacturasByCategoriayMonth(categoria) {
         return new Promise((resolve, reject) => {
             pool.query('SELECT * FROM compras WHERE categoria = $1 AND EXTRACT(MONTH FROM fecha_emision) = EXTRACT(MONTH FROM CURRENT_DATE)', [categoria], (error, results) => {
@@ -265,7 +286,13 @@ const facturaModel = {
 
     getFacturasByFechaEmision(fechaEmision) {
         return new Promise((resolve, reject) => {
-            pool.query('SELECT * FROM compras WHERE fecha_emision = $1', [fechaEmision], (error, results) => {
+            const query = `
+                SELECT c.*, p.razon_social AS proveedor_nombre 
+                FROM compras c
+                LEFT JOIN proveedores p ON c.proveedor_id = p.id
+                WHERE c.fecha_emision::date = $1::date
+            `;
+            pool.query(query, [fechaEmision], (error, results) => {
                 if (error) {
                     return reject(error);
                 }

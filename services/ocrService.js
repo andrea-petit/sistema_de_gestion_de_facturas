@@ -225,10 +225,9 @@ async function extraerDatosFactura(imagePath) {
     }
 
     // =================================================================
-    // 8. EXTRAER Y BALANCEAR MONTOS FISCALES (Reglas de Negocio SENIAT)
+    // 8. EXTRAER Y BALANCEAR MONTOS FISCALES (Reglas de Negocio SENIAT) - ULTRA BLINDADO
     // =================================================================
     
-    // Extraemos todos los números sospechosos de dinero en el documento
     const montosDetectados = [];
     const dineroRegexFlex = /(?:Bs\s*)?([\d.]+,\d{2})|(?:Bs\s*)?([\d,]+\.\d{2})/g;
     
@@ -245,45 +244,60 @@ async function extraerDatosFactura(imagePath) {
       datosFactura.montoTotal = Math.max(...montosDetectados);
     }
 
-    // Busqueda de etiquetas fiscales con la estrategia de proximidad de líneas
-    const montoExentoDetectado = findAmountByLabel(lineas, /\bEXENT[OA]S?\b/i);
-    const montoIvaDetectado = findAmountByLabel(lineas, /\bIVA\b|\bBI\s*G|\bIVA\s*G/i); // Captura "IVA G16,00%"
-    const baseImponibleDetectado = findAmountByLabel(lineas, /BASE\s*IMPONIBLE|BASE\s*IVA|SUBTOTAL|BI\s*G/i);
+    // Búsqueda rigurosa de etiquetas fiscales en el texto Markdown
+    // Añadimos variantes comunes que imprimen las máquinas fiscales (E1, E2, (E), EX.)
+    const tienePalabraExento = /\bEXENT[OA]S?\b|(?:\s|^)E1(?:\s|$)|(?:\s|^)\(E\)(?:\s|$)/i.test(textMarkdown);
+    
+    const montoExentoDetectado = findAmountByLabel(lineas, /\bEXENT[OA]S?\b|(?:\s|^)E1(?:\s|$)/i);
+    const montoIvaDetectado = findAmountByLabel(lineas, /\bIVA\b|\bBI\s*G|\bIVA\s*G|16\s*%/i); 
+    const baseImponibleDetectado = findAmountByLabel(lineas, /BASE\s*IMPONIBLE|BASE\s*IVA|SUBTOTAL\s*IVA|BI\s*G/i);
 
+    // Asignación inicial
     datosFactura.montoExento = roundToTwo(montoExentoDetectado);
 
-    // --- REGLAS DE RECONCILIACIÓN MATEMÁTICA ---
-    if (baseImponibleDetectado > 0) {
-      datosFactura.montoAfectoIva = roundToTwo(baseImponibleDetectado);
-      datosFactura.montoIva = montoIvaDetectado > 0 ? roundToTwo(montoIvaDetectado) : roundToTwo(baseImponibleDetectado * 0.16);
-    } 
-    else if (montoIvaDetectado > 0) {
-      datosFactura.montoIva = roundToTwo(montoIvaDetectado);
-      datosFactura.montoAfectoIva = roundToTwo(montoIvaDetectado / 0.16);
-    } 
-    else if (datosFactura.montoExento > 0 && datosFactura.montoTotal > 0) {
-      // Si hay exento y hay total, calculamos la diferencia afecta de forma segura
-      const diferencia = datosFactura.montoTotal - datosFactura.montoExento;
-      if (diferencia > 0.5) { // Tolerancia por redondeos fiscales menores
-        datosFactura.montoAfectoIva = roundToTwo(diferencia / 1.16);
-        datosFactura.montoIva = roundToTwo(datosFactura.montoTotal - datosFactura.montoExento - datosFactura.montoAfectoIva);
-      } else {
-        // Es una factura 100% exenta (Como Barbacoa Ranch o Tu Carne)
-        datosFactura.montoAfectoIva = 0.00;
-        datosFactura.montoIva = 0.00;
-        datosFactura.montoExento = datosFactura.montoTotal; // Cuadre perfecto
-      }
-    } 
-    else if (datosFactura.montoTotal > 0) {
-      // Fallback: Si no se detectó IVA ni Exento explícito, asumimos por seguridad tasa general 16%
-      datosFactura.montoAfectoIva = roundToTwo(datosFactura.montoTotal / 1.16);
-      datosFactura.montoIva = roundToTwo(datosFactura.montoTotal - datosFactura.montoAfectoIva);
-    }
+    console.log(`[SGAF Auditoría OCR] Exento Detectado: ${montoExentoDetectado} | IVA Detectado: ${montoIvaDetectado} | Base Imponible: ${baseImponibleDetectado}`);
 
-    // Doble verificación: Si la suma da el total, forzamos el exento exacto
-    if (datosFactura.montoExento === 0 && datosFactura.montoAfectoIva === 0 && datosFactura.montoTotal > 0) {
+    // --- RESTRUCTURACIÓN DE RECONCILIACIÓN MATEMÁTICA ---
+
+    // CASO 1: Si el OCR detecta textualmente que hay un IVA o una Base Imponible mayor a cero
+    if (baseImponibleDetectado > 0 || montoIvaDetectado > 0) {
+      datosFactura.montoAfectoIva = baseImponibleDetectado > 0 ? roundToTwo(baseImponibleDetectado) : roundToTwo(montoIvaDetectado / 0.16);
+      datosFactura.montoIva = montoIvaDetectado > 0 ? roundToTwo(montoIvaDetectado) : roundToTwo(datosFactura.montoAfectoIva * 0.16);
+      
+      const subtotalAfecto = datosFactura.montoAfectoIva + datosFactura.montoIva;
+      const diferenciaExenta = datosFactura.montoTotal - subtotalAfecto;
+      
+      // Si la diferencia con el total es significativa, el resto es exento (Factura Mixta)
+      if (diferenciaExenta > 0.99) {
+        datosFactura.montoExento = roundToTwo(diferenciaExenta);
+      } else {
+        datosFactura.montoExento = 0.00;
+        datosFactura.montoTotal = roundToTwo(subtotalAfecto); // Sincronizamos céntimos
+      }
+    }
+    // CASO 2: No hay rastros de IVA ni Base Imponible, pero se detectó la palabra EXENTO o montos exentos
+    else if (datosFactura.montoExento > 0 || tienePalabraExento) {
+      datosFactura.montoAfectoIva = 0.00;
+      datosFactura.montoIva = 0.00;
+      // Si el desglose falló pero sabemos que es exenta, el total es el exento
+      datosFactura.montoExento = datosFactura.montoTotal > 0 ? datosFactura.montoTotal : roundToTwo(montoExentoDetectado);
+      datosFactura.montoTotal = datosFactura.montoExento;
+    }
+    // CASO 3: CONTROL FISCAL DE SEGURIDAD PARA RESTAURANTES / LOGÍSTICA EXENTA
+    // Si no hay IVA ni Base Imponible detectada en ninguna línea, asumimos que es 100% EXENTA por defecto
+    else {
+      console.log("[SGAF Alert] No se encontraron indicadores de IVA. Aplicando Cero Fiscal (Exento por defecto).");
+      datosFactura.montoAfectoIva = 0.00;
+      datosFactura.montoIva = 0.00;
       datosFactura.montoExento = datosFactura.montoTotal;
     }
+
+    // Limpieza de seguridad: Si el IVA quedó en 0, la retención DEBE ser obligatoriamente 0
+    if (datosFactura.montoIva === 0) {
+      datosFactura.porcentaje_retencion = 0.00;
+      datosFactura.comprobante_retencion = null;
+    }
+
 
     // 9. CLASIFICACIÓN DE CATEGORÍA CON TU MODELO NLP (Sanetizado Seguro)
     let textoParaNLP = "";
