@@ -10,6 +10,8 @@ const { entrenarModelo, clasificarTexto } = require('./services/nlpClassifier');
 const { extraerProveedorYDireccion } = require('./services/facturaParser');
 const facturaRoutes = require('./routes/facturas_routes');
 const historialRoutes = require('./routes/historial_routes');
+const userRoutes = require('./routes/user_routes');
+const proveedoresRoutes = require('./routes/proveedores_routes');
 const cors = require('cors');
 const app = express();
 app.use(express.json());
@@ -32,6 +34,8 @@ app.use(session({
 app.use('/api', historialRoutes);
 app.use('/api', facturaRoutes);
 app.use('/api/auth', rutas_autenticacion);
+app.use('/api/users', userRoutes);
+app.use('/api/proveedores', proveedoresRoutes);
 app.use('/api/login', require('./routes/loginroutes'));
 
 app.get('/', (req, res) => {

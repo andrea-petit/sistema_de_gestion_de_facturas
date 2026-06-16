@@ -7,22 +7,29 @@ form.addEventListener("submit", async (e) => {
   e.preventDefault();
   errorDiv.style.display = "none";
 
-  const nombre = document.getElementById("usuario").value;
-  const contrasena = document.getElementById("clave").value;
+  const nombre_usuario = document.getElementById("usuario").value;
+  const contraseña = document.getElementById("clave").value;
 
   try {
     // Llama a tu endpoint del backend
-    const respuesta = await fetch("/api/login", {
+    const respuesta = await fetch("/api/users/login", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre, contrasena }),
+      body: JSON.stringify({ nombre_usuario, contraseña }),
     });
 
     const datos = await respuesta.json();
 
     if (datos.ok) {
       localStorage.setItem("token", datos.token);
+      // Guardar rol del usuario en localStorage (si el backend lo retorna)
+      try {
+        const rol = (datos.data && datos.data.rol) || datos.rol || null;
+        if (rol) localStorage.setItem('userRol', rol);
+      } catch (e) {
+        console.warn('No se pudo guardar userRol en localStorage:', e);
+      }
 
       // PASAR A LA SIGUIENTE PANTALLA: Oculta Login, muestra Éxito
       vistaLogin.style.display = "none";

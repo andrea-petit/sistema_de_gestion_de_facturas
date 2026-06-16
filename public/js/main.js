@@ -24,6 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initUploadForm();
     initBuscarModulo();
     initHistorialModulo(); // Inicializa el módulo de historial y carga la primera página
+    initProveedoresModulo();
+    initUsuariosModulo();
 });
 
 /**
@@ -434,5 +436,410 @@ async function cargarHistorial(page) {
         cuerpo.innerHTML = `<tr><td colspan="6" style="padding: 20px; text-align: center; color: #ef4444;">❌ Error al cargar historial: ${error.message}</td></tr>`;
         if (btnPrev) btnPrev.disabled = true;
         if (btnNext) btnNext.disabled = true;
+    }
+}
+
+
+function initProveedoresModulo() {
+    cargarProveedores();
+
+    const formEdicion = document.getElementById('formEdicionProveedor');
+    if (!formEdicion) return;
+
+    formEdicion.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const idProveedor = document.getElementById('editProvId').value;
+        
+        // Mapeamos los campos actuales
+        const inputs = [
+            document.getElementById('editProvRazon'),
+            document.getElementById('editProvDireccion'),
+            document.getElementById('editProvTelefono'),
+            document.getElementById('editProvContribuyente')
+        ];
+
+        let actualizacionesExitosas = 0;
+        const btnSubmit = formEdicion.querySelector('button[type="submit"]');
+        btnSubmit.disabled = true;
+        btnSubmit.innerText = "Guardando...";
+
+        try {
+            // Evaluamos secuencialmente cada input
+            for (const input of inputs) {
+                const nombreCampo = input.getAttribute('data-campo');
+                let valorCampo = input.value.trim();
+
+                // Si el teléfono está vacío, lo enviamos como un string vacío o nulo en lugar de bloquear el submit
+                if (nombreCampo === 'telefono' && !valorCampo) {
+                    valorCampo = ""; 
+                }
+
+                const response = await fetch(`/api/proveedores/${idProveedor}`, {
+                    method: 'PUT',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        campo: nombreCampo,
+                        valor: valorCampo
+                    })
+                });
+
+                if (response.ok) actualizacionesExitosas++;
+            }
+
+            if (actualizacionesExitosas > 0) {
+                alert("¡Proveedor actualizado correctamente!");
+                await cargarProveedores();
+                
+                // Limpieza del panel de edición
+                document.getElementById('editorPlaceholder').style.display = 'block';
+                formEdicion.style.display = 'none';
+                formEdicion.reset();
+            } else {
+                alert("No se realizaron modificaciones en el proveedor.");
+            }
+
+        } catch (error) {
+            console.error("[SGAF Error Proveedores]:", error);
+            alert("Error de conexión al intentar actualizar el proveedor.");
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.innerText = "Guardar Cambios";
+        }
+    });
+}
+
+async function cargarProveedores() {
+    const cuerpoTabla = document.getElementById('listaProveedoresCuerpo');
+    if (!cuerpoTabla) return;
+
+    try {
+        const response = await fetch('/api/proveedores', {
+            method: 'GET',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const resultado = await response.json();
+        if (!response.ok) throw new Error(resultado.msg || 'Error al recuperar proveedores.');
+
+        const proveedores = resultado.data || [];
+
+        if (proveedores.length === 0) {
+            cuerpoTabla.innerHTML = `<tr><td colspan="4" style="padding: 20px; text-align: center; color: var(--text-muted);">No existen proveedores registrados en la base de datos.</td></tr>`;
+            return;
+        }
+
+        cuerpoTabla.innerHTML = '';
+        
+        proveedores.forEach(prov => {
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid var(--border)';
+            tr.style.transition = 'background 0.2s';
+
+            // Formateo estético del RIF completo (Ej: J-41234567-0)
+            const tipoDoc = prov.tipo_documento ? `${prov.tipo_documento}-` : '';
+            const rifCompleto = `${tipoDoc}${prov.rif || 'S/R'}`;
+
+            tr.innerHTML = `
+                <td style="padding: 12px 10px; font-weight: 600; color: #0f172a;">${rifCompleto}</td>
+                <td style="padding: 12px 10px; color: #334155; font-weight: 500;">${prov.razon_social}</td>
+                <td style="padding: 12px 10px; color: #64748b;">${prov.telefono || 'N/A'}</td>
+                <td style="padding: 12px 10px; text-align: right;">
+                    <button class="btn-editar-prov" style="background: #f1f5f9; color: var(--primary); border: 1px solid var(--border); padding: 5px 10px; font-size: 12px; font-weight: 600; border-radius: 4px; cursor: pointer; transition: all 0.2s;">
+                        Editar
+                    </button>
+                </td>
+            `;
+
+            // Evento interactivo para cargar los datos en el editor lateral
+            const btnEditar = tr.querySelector('.btn-editar-prov');
+            btnEditar.addEventListener('click', () => {
+                // Efecto visual selectivo en la tabla
+                document.querySelectorAll('#listaProveedoresCuerpo tr').forEach(r => r.style.background = 'transparent');
+                tr.style.background = '#eff6ff';
+
+                // Mostrar el formulario y rellenar los inputs con el estado actual
+                document.getElementById('editorPlaceholder').style.display = 'none';
+                const formEdicion = document.getElementById('formEdicionProveedor');
+                formEdicion.style.display = 'flex';
+
+                document.getElementById('editProvId').value = prov.id;
+                document.getElementById('editProvRazon').value = prov.razon_social || '';
+                document.getElementById('editProvDireccion').value = prov.direccion || '';
+                document.getElementById('editProvTelefono').value = prov.telefono || '';
+                document.getElementById('editProvContribuyente').value = prov.tipo_contribuyente || '';
+            });
+
+            cuerpoTabla.appendChild(tr);
+        });
+
+    } catch (error) {
+        console.error("[SGAF Error Tabla Proveedores]:", error);
+        cuerpoTabla.innerHTML = `<tr><td colspan="4" style="padding: 20px; text-align: center; color: #ef4444;">❌ Error al procesar listado: ${error.message}</td></tr>`;
+    }
+}
+
+
+// Variables de control de estado del módulo
+let modoFormUsuario = 'REGISTRO'; 
+
+function initUsuariosModulo() {
+    // Forzamos un valor seguro por defecto por si storage está vacío
+    // Primero leemos `localStorage` (guardado por el login), con fallback a `sessionStorage`
+    let operadorRol = localStorage.getItem('userRol') || sessionStorage.getItem('userRol');
+
+    console.log("[SGAF Seguridad] Inicializando módulo con rol:", operadorRol);
+
+    // 1. CONTROL DE ACCESO DE MENÚ LATERAL (Evita romper el script si el id cambia)
+    if (operadorRol === 'empleado') {
+        const menuUser = document.getElementById('menuItemUsuarios');
+        if (menuUser) menuUser.remove();
+        return; 
+    }
+
+    // 2. REGLA ESTRICTA: El Admin NO puede crear Administradores
+    const optAdmin = document.getElementById('optRolAdmin');
+    if (operadorRol === 'admin' && optAdmin) {
+        optAdmin.remove(); 
+    }
+
+    // Forzar la carga de la tabla
+    cargarUsuariosTabla(operadorRol);
+
+    // 3. CAPTURA DEL FORMULARIO SIN CAUSAR EXCEPCIONES
+    const formGestion = document.getElementById('formGestionUsuario');
+    if (formGestion) {
+        formGestion.onsubmit = async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            await procesarFormularioUsuario(operadorRol);
+            return false;
+        };
+    } else {
+        console.warn("[SGAF Seguridad] Alerta: No se encontró el elemento #formGestionUsuario en el HTML.");
+    }
+
+    // Botones auxiliares de control de modo
+    const btnModoRegistro = document.getElementById('btnModoRegistro');
+    const btnCancelarEdicion = document.getElementById('btnCancelarEdicion');
+
+    if (btnModoRegistro) {
+        btnModoRegistro.onclick = () => setFormModo('REGISTRO', null, operadorRol);
+    }
+    if (btnCancelarEdicion) {
+        btnCancelarEdicion.onclick = () => setFormModo('REGISTRO', null, operadorRol);
+    }
+}
+
+// Configura visualmente el formulario dependiendo de la acción (Registrar o Editar)
+function setFormModo(modo, usuarioData = null, operadorRol = 'admin') {
+    modoFormUsuario = modo;
+    const form = document.getElementById('formGestionUsuario');
+    const titulo = document.getElementById('formUsuarioTitulo');
+    const desc = document.getElementById('formUsuarioDescripcion');
+    const btnSubmit = document.getElementById('btnSubmitUsuario');
+    const btnCancelar = document.getElementById('btnCancelarEdicion');
+    const groupRol = document.getElementById('groupFormRol');
+    const labelPass = document.getElementById('labelFormPassword');
+    const helpPass = document.getElementById('helpFormPassword');
+    const inputPass = document.getElementById('userFormPassword');
+
+    if (!form) return;
+    form.reset();
+
+    // Variables de colores a prueba de fallos (si no existen tus variables CSS, usa valores fijos)
+    const colorPrimario = "var(--primary, #2563eb)";
+    const colorAdvertencia = "var(--warning, #eab308)";
+
+    if (modo === 'REGISTRO') {
+        if (titulo) titulo.innerText = "Registrar Nuevo Usuario";
+        if (desc) desc.innerText = "Completa los datos para asignar credenciales de acceso al sistema.";
+        if (btnSubmit) {
+            btnSubmit.innerText = "Crear Usuario";
+            btnSubmit.style.backgroundColor = colorPrimario;
+        }
+        if (btnCancelar) btnCancelar.style.display = "none";
+        if (groupRol) groupRol.style.display = "flex";
+        if (labelPass) labelPass.innerText = "Contraseña de Acceso:";
+        if (helpPass) helpPass.style.display = "none";
+        if (inputPass) inputPass.required = true;
+        
+        const inputUser = document.getElementById('userFormUsername');
+        if (inputUser) inputUser.disabled = false;
+    } else if (modo === 'EDICION' && usuarioData) {
+        if (titulo) titulo.innerText = `Editar: @${usuarioData.nombre_usuario}`;
+        if (desc) desc.innerText = "Modifica los campos del operador. El rol no puede alterarse.";
+        if (btnSubmit) {
+            btnSubmit.innerText = "Guardar Cambios";
+            btnSubmit.style.backgroundColor = colorAdvertencia;
+        }
+        if (btnCancelar) btnCancelar.style.display = "block";
+        if (groupRol) groupRol.style.display = "none"; 
+        if (labelPass) labelPass.innerText = "Resetear Contraseña (Opcional):";
+        if (helpPass) helpPass.style.display = "block";
+        if (inputPass) inputPass.required = false; 
+
+        // Rellenar datos controlando nulos
+        const inputId = document.getElementById('userFormId');
+        const inputUser = document.getElementById('userFormUsername');
+        const inputNombre = document.getElementById('userFormNombre');
+        const inputCorreo = document.getElementById('userFormCorreo');
+
+        if (inputId) inputId.value = usuarioData.id || '';
+        if (inputUser) {
+            inputUser.value = usuarioData.nombre_usuario || '';
+            inputUser.disabled = true;
+        }
+        if (inputNombre) inputNombre.value = usuarioData.nombre_completo || '';
+        if (inputCorreo) inputCorreo.value = usuarioData.correo || '';
+    }
+}
+
+async function cargarUsuariosTabla(operadorRol) {
+    const cuerpo = document.getElementById('listaUsuariosCuerpo');
+    if (!cuerpo) return;
+
+    // Estilos de texto alternativos por si var(--text-muted) causa problemas
+    const colorMuted = "var(--text-muted, #64748b)";
+
+    try {
+        console.log("[SGAF Seguridad] Solicitando /api/users...");
+        const res = await fetch('/api/users', { method: 'GET', credentials: 'include' });
+        const resJson = await res.json();
+
+        if (!res.ok) throw new Error(resJson.msg || 'Error al descargar el listado.');
+
+        const usuarios = resJson.data || [];
+        cuerpo.innerHTML = '';
+
+        if (usuarios.length === 0) {
+            cuerpo.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: ${colorMuted};">No hay usuarios registrados.</td></tr>`;
+            return;
+        }
+
+        usuarios.forEach(user => {
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid var(--border, #e2e8f0)';
+            
+            const estaActivo = user.activo !== false;
+            const badgeEstado = estaActivo
+                ? `<span style="background: #dcfce7; color: #16a34a; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 11px;">Activo</span>`
+                : `<span style="background: #fee2e2; color: #ef4444; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 11px;">Inactivo</span>`;
+
+            tr.innerHTML = `
+                <td style="padding: 12px 10px; font-weight: 600; color: #0f172a;">@${user.nombre_usuario || 'S/U'}</td>
+                <td style="padding: 12px 10px; color: #334155;">${user.nombre_completo || 'Sin Nombre'}</td>
+                <td style="padding: 12px 10px;"><span style="text-transform: capitalize; font-size: 12px; color: #475569; font-weight: 500;">${user.rol || 'Sin Rol'}</span></td>
+                <td style="padding: 12px 10px;">${badgeEstado}</td>
+                <td style="padding: 12px 10px; text-align: right;" class="acciones-zona"></td>
+            `;
+
+            const zonaAcciones = tr.querySelector('.acciones-zona');
+
+            if (operadorRol === 'admin' && (user.rol === 'admin' || user.rol === 'superadmin')) {
+                if (zonaAcciones) zonaAcciones.innerHTML = `<span style="color: ${colorMuted}; font-size: 12px; font-style: italic;">Protegido</span>`;
+            } else {
+                const btnEdit = document.createElement('button');
+                btnEdit.innerText = "✏️";
+                btnEdit.style = "background: none; border: none; cursor: pointer; margin-right: 10px; font-size: 13px;";
+                btnEdit.onclick = () => setFormModo('EDICION', user, operadorRol);
+
+                const btnInactivar = document.createElement('button');
+                btnInactivar.innerText = estaActivo ? "❌" : "✅";
+                btnInactivar.style = "background: none; border: none; cursor: pointer; font-size: 13px;";
+                btnInactivar.onclick = () => alternarEstadoUsuario(user.id, user.nombre_usuario, operadorRol);
+
+                if (zonaAcciones) {
+                    zonaAcciones.appendChild(btnEdit);
+                    zonaAcciones.appendChild(btnInactivar);
+                }
+            }
+
+            cuerpo.appendChild(tr);
+        });
+
+    } catch (err) {
+        console.error("[SGAF Render Usuarios Error]:", err);
+        cuerpo.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: #ef4444;">❌ Error al procesar usuarios: ${err.message}</td></tr>`;
+    }
+}
+
+async function procesarFormularioUsuario(operadorRol) {
+    const btnSubmit = document.getElementById('btnSubmitUsuario');
+    if (btnSubmit) btnSubmit.disabled = true;
+
+    try {
+        if (modoFormUsuario === 'REGISTRO') {
+            const bodyData = {
+                nombre_usuario: document.getElementById('userFormUsername').value.trim(),
+                nombre_completo: document.getElementById('userFormNombre').value.trim(),
+                correo: document.getElementById('userFormCorreo').value.trim(),
+                contraseña: document.getElementById('userFormPassword').value,
+                rol: document.getElementById('userFormRol').value
+            };
+
+            const res = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(bodyData)
+            });
+            const resJson = await res.json();
+            if (!res.ok) throw new Error(resJson.msg || 'Error en el servidor al registrar.');
+
+            alert('¡Usuario guardado con éxito!');
+            setFormModo('REGISTRO', null, operadorRol);
+            await cargarUsuariosTabla(operadorRol);
+
+        } else {
+            // MODO EDICIÓN
+            const idUser = document.getElementById('userFormId').value;
+            const camposAEditar = [
+                { campo: 'nombre_completo', valor: document.getElementById('userFormNombre').value.trim() },
+                { campo: 'correo', valor: document.getElementById('userFormCorreo').value.trim() }
+            ];
+
+            const passVal = document.getElementById('userFormPassword').value;
+            if (passVal) {
+                camposAEditar.push({ campo: 'contraseña', valor: passVal });
+            }
+
+            for (const item of camposAEditar) {
+                const res = await fetch(`/api/users/${idUser}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ campo: item.campo, valor: item.valor })
+                });
+                if (!res.ok) {
+                    const errorJson = await res.json();
+                    throw new Error(errorJson.msg || 'Fallo al actualizar campos.');
+                }
+            }
+            alert('¡Información de usuario modificada con éxito!');
+            setFormModo('REGISTRO', null, operadorRol);
+            await cargarUsuariosTabla(operadorRol);
+        }
+    } catch (err) {
+        alert(`Error: ${err.message}`);
+    } finally {
+        if (btnSubmit) btnSubmit.disabled = false;
+    }
+}
+
+async function alternarEstadoUsuario(id, username, operadorRol) {
+    if (!confirm(`¿Deseas cambiar el estado de actividad de @${username}?`)) return;
+
+    try {
+        const res = await fetch(`/api/users/${id}`, { method: 'DELETE', credentials: 'include' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.msg || 'No se pudo procesar la solicitud.');
+
+        alert(`Estado de @${username} modificado.`);
+        await cargarUsuariosTabla(operadorRol);
+    } catch (err) {
+        alert(`Error: ${err.message}`);
     }
 }

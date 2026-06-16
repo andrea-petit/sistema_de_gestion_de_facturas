@@ -27,7 +27,7 @@ const userModel = {
 
     createUser(userData) {  
         return new Promise((resolve, reject) => {
-            pool.query('INSERT INTO usuarios (nombre_usuario, contraseña_hash, nombre_completo) VALUES ($1, $2, $3) RETURNING *', [userData.nombre_usuario, userData.contraseña_hash, userData.nombre_completo], (error, results) => {
+            pool.query('INSERT INTO usuarios (nombre_usuario, contraseña_hash, nombre_completo, rol, correo) VALUES ($1, $2, $3, $4, $5) RETURNING *', [userData.nombre_usuario, userData.contraseña_hash, userData.nombre_completo, userData.rol, userData.correo], (error, results) => {
                 if (error) {
                     reject(error);
                 } else {
@@ -49,7 +49,7 @@ const userModel = {
         });
     },
 
-    inativateUser(id) {
+    inactivateUser(id) {
         return new Promise((resolve, reject) => {
             pool.query('UPDATE usuarios SET activo = false WHERE id = $1 RETURNING *', [id], (error, results) => {
                 if (error) {
@@ -59,7 +59,19 @@ const userModel = {
                 }
             });
         });
+    },
+
+    loginUser(nombre_usuario) {
+        return new Promise((resolve, reject) => {
+            pool.query('SELECT * FROM usuarios WHERE nombre_usuario = $1', [nombre_usuario], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
     }
-}
+};
 
 module.exports = userModel;
