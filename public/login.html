@@ -9,7 +9,8 @@
     <div class="login-container">
 
       <div class="bienvenida">
-        <h1>Bienvenido al Sistema de Gestión de Facturas</h1>
+        <img id="prim" src="/img/fondo2 arriba.png" alt="">
+        <img id="seg" src="/img/fondo2 abajo.png" alt="">
       </div>
 
       <div id="pantalla-login" class="contenedor">
@@ -19,36 +20,24 @@
           <form id="formulario-login">
               <div class="campo">
                   <label>Usuario:</label>
-                  <input type="text" id="usuario" required placeholder="Tu usuario de la BD">
+                  <input type="text" id="usuario" required placeholder="Ingresa tu usuario">
               </div>
               <div class="campo">
                   <label>Contraseña:</label>
-                  <input type="password" id="clave" required placeholder="Tu contraseña">
+                  <input type="password" id="clave" required placeholder="Ingresa tu contraseña">
               </div>
-              <button type="submit" class="btn">Validar con Backend</button>
+              <button type="submit" class="btn">Iniciar Sesión</button>
+
+              <a href="#" id="olvido-clave" class="olvido-clave" style="margin-top: 10px; display: block; text-align: center; color: #007BFF; text-decoration: none;">¿Olvidaste tu contraseña?</a>
           </form>
       </div>
     </div>
 
-    <div id="pantalla-sistema" class="contenedor">
-        <h2>🎉 ¡Acceso Concedido!</h2>
-        
-        <div class="caja-exito">
-            <p id="mensaje-bienvenida" style="font-size: 18px; font-weight: bold;"></p>
-            <p style="margin-top: 8px; font-size: 14px;">El Backend verificó tus credenciales con Supabase correctamente.</p>
-            <pre id="token-salida" class="token-area"></pre>
-        </div>
-
-
-        <button id="btn-ir-dashboard" class="btn-sistema" type="button">Entrar al Extractor de Facturas ➡️</button>
-
-        <button class="btn" style="background: #7f8c8d; margin-top: 15px; padding: 8px;" onclick="window.location.reload()">Cerrar Sesión</button>
-    </div>
-
     <footer class="footer">
-        &copy; 2024 Sistema de Gestión de Facturas. Todos los derechos reservados.
+        &copy; 2026 EchoSystems. Todos los derechos reservados.
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/login.js"></script>
 </body>
 </html>

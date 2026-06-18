@@ -1,6 +1,6 @@
 const form = document.getElementById("formulario-login");
 const vistaLogin = document.getElementById("pantalla-login");
-const vistaSistema = document.getElementById("pantalla-sistema");
+// Nota: ya no usamos la pantalla-sistema; usaremos SweetAlert para notificaciones
 const errorDiv = document.getElementById("caja-error");
 
 form.addEventListener("submit", async (e) => {
@@ -31,18 +31,24 @@ form.addEventListener("submit", async (e) => {
         console.warn('No se pudo guardar userRol en localStorage:', e);
       }
 
-      // PASAR A LA SIGUIENTE PANTALLA: Oculta Login, muestra Éxito
+      // Ocultar el formulario mientras mostramos la notificación
       vistaLogin.style.display = "none";
-      vistaSistema.style.display = "block";
 
-      document.getElementById("mensaje-bienvenida").innerText = datos.msg;
-      document.getElementById("token-salida").innerText = datos.token;
-
-      const btnIrDashboard = document.getElementById("btn-ir-dashboard");
-      if (btnIrDashboard) {
-        btnIrDashboard.addEventListener("click", () => {
-          window.location.replace("/dashboard");
+      // Mostrar SweetAlert y redirigir al dashboard
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'success',
+          title: 'Acceso concedido',
+          text: 'Redirigiendo al dashboard...',
+          timer: 2000,
+          showConfirmButton: false,
+          timerProgressBar: true,
+        }).then(() => {
+          window.location.replace('/dashboard');
         });
+      } else {
+        // Fallback simple
+        setTimeout(() => window.location.replace('/dashboard'), 2000);
       }
     } else {
       errorDiv.innerText = datos.msg;
