@@ -60,18 +60,37 @@ function switchView(viewId, element) {
 /**
  * Gestión del Formulario de Procesamiento e Interacción con el Servidor
  */
-function initUploadForm() {
+// Variable en memoria para las directrices fiscales del SENIAT
+let configFiscalEmpresa = null;
+
+async function initUploadForm() {
     const fileInput = document.getElementById('fileInput');
     const uploadLabel = document.getElementById('uploadLabel');
     const uploadForm = document.getElementById('uploadForm');
     const btnSubmit = document.getElementById('btnSubmit');
     const loadingText = document.getElementById('loadingText');
     const resultSection = document.getElementById('resultSection');
-    const statusAlert = document.getElementById('statusAlert');
     const verificationForm = document.getElementById('verificationForm');
     const dropZone = document.getElementById('dropZone');
 
-    // Manejador del clic en la zona de arrastre
+    // Elementos nuevos de impuestos
+    const valTotal = document.getElementById('valTotal');
+    const valBaseImponible = document.getElementById('valBaseImponible');
+    const valPorcentajeAlicuota = document.getElementById('valPorcentajeAlicuota');
+    const checkRetencionServicio = document.getElementById('checkRetencionServicio');
+
+    // 🚀 CARGA INICIAL: Traer el perfil de la empresa apenas se monta el módulo
+    try {
+        const resEmpresa = await fetch('/api/empresa', { method: 'GET', credentials: 'include' });
+        const resEmpresaJson = await resEmpresa.json();
+        if (resEmpresaJson.ok && resEmpresaJson.data) {
+            configFiscalEmpresa = resEmpresaJson.data;
+            console.log("[SGAF Fiscal] Perfil detectado:", configFiscalEmpresa.tipo_contribuyente);
+        }
+    } catch (err) {
+        console.error("No se pudo pre-cargar el perfil de empresa:", err);
+    }
+
     if (dropZone && fileInput) {
         dropZone.addEventListener('click', () => { fileInput.click(); });
     }
@@ -99,20 +118,38 @@ function initUploadForm() {
             if (response.ok) {
                 const info = resultado.data;
                 
-                // 1. Inyectamos los datos en los inputs visibles
                 document.getElementById('valProveedor').value = info.proveedor || '';
                 document.getElementById('valDireccion').value = info.direccion || '';
                 document.getElementById('valRif').value = info.rifEmisor || '';
                 document.getElementById('valNro').value = info.nroFactura || '';
                 document.getElementById('valControl').value = info.nroControl || '';
                 document.getElementById('valFecha').value = info.fechaEmision || '';
-                document.getElementById('valTotal').value = info.montoTotal ? info.montoTotal.toFixed(2) : '';
                 document.getElementById('valCategoria').value = info.categoriaDetectada || '';
-                
-                // [NUEVO] 2. Guardamos la URL de Cloudinary en el input oculto
                 document.getElementById('valImgUrl').value = info.img_url || '';
                 
-                document.getElementById('resTextoPlano').innerText = info.textoPlano || '';
+                const textoCuerpo = info.textoPlano || '';
+                document.getElementById('resTextoPlano').innerText = textoCuerpo;
+
+                const totalFactura = parseFloat(info.montoTotal) || 0;
+                valTotal.value = totalFactura.toFixed(2);
+                
+                // 🚀 NUEVA ANALÍTICA: ¿La factura contiene indicios de ser exenta?
+                const textoUpper = textoCuerpo.toUpperCase();
+                const selectorAlicuota = document.getElementById('valPorcentajeAlicuota');
+                
+                let alicuotaADesglosar = 16; // Por defecto general
+
+                // Si el texto plano contiene "EXENTO" o múltiples marcas de exención "(E)"
+                if (textoUpper.includes("EXENTO") || (textoUpper.match(/\(E\)/g) || []).length > 2) {
+                    console.log("[SGAF Analizador] Se detectó comportamiento exento (0% IVA).");
+                    alicuotaADesglosar = 0;
+                    if (selectorAlicuota) selectorAlicuota.value = "0"; // Cambia el select del formulario de forma visual
+                } else {
+                    if (selectorAlicuota) selectorAlicuota.value = "16";
+                }
+                
+                // Ejecuta el recálculo con la alícuota descubierta por el analizador
+                recalcularDesdeTotal(totalFactura, alicuotaADesglosar);
 
                 verificarCalidadDatos();
                 resultSection.style.display = 'block';
@@ -127,13 +164,46 @@ function initUploadForm() {
         }
     });
 
+    // LISTENERS DE RECALCULO FISCAL DINÁMICO EN PANTALLA
+    if (valTotal) {
+        valTotal.addEventListener('input', () => {
+            const total = parseFloat(valTotal.value) || 0;
+            const alicuota = parseFloat(valPorcentajeAlicuota.value) || 0;
+            recalcularDesdeTotal(total, alicuota);
+        });
+    }
+
+    if (valBaseImponible) {
+        valBaseImponible.addEventListener('input', () => {
+            const base = parseFloat(valBaseImponible.value) || 0;
+            const alicuota = parseFloat(valPorcentajeAlicuota.value) || 0;
+            recalcularDesdeBase(base, alicuota);
+        });
+    }
+
+    if (valPorcentajeAlicuota) {
+        valPorcentajeAlicuota.addEventListener('change', () => {
+            const base = parseFloat(valBaseImponible.value) || 0;
+            const alicuota = parseFloat(valPorcentajeAlicuota.value) || 0;
+            recalcularDesdeBase(base, alicuota);
+        });
+    }
+
+    if (checkRetencionServicio) {
+        checkRetencionServicio.addEventListener('change', () => {
+            const base = parseFloat(valBaseImponible.value) || 0;
+            const alicuota = parseFloat(valPorcentajeAlicuota.value) || 0;
+            recalcularDesdeBase(base, alicuota);
+        });
+    }
+
     // =================================================================
-    // PASO 2: ENVÍO DEFINITIVO DE DATOS AUDITADOS
+    // PASO 2: ENVÍO DEFINITIVO DE DATOS AUDITADOS (Tablas Relacionales)
     // =================================================================
     verificationForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // Recolectamos los datos directamente del estado actual de los inputs
+        // Estructura integrada para 'public.compras' y 'public.compra_impuestos'
         const datosVerificados = {
             proveedor: document.getElementById('valProveedor').value.trim(),
             direccion: document.getElementById('valDireccion').value.trim(),
@@ -141,10 +211,20 @@ function initUploadForm() {
             nroFactura: document.getElementById('valNro').value.trim(),
             nroControl: document.getElementById('valControl').value.trim(),
             fechaEmision: document.getElementById('valFecha').value.trim(),
-            montoTotal: parseFloat(document.getElementById('valTotal').value),
             categoria: document.getElementById('valCategoria').value.trim(),
-            // [SOLUCIÓN] Extraemos de forma segura el valor del input oculto
-            img_url: document.getElementById('valImgUrl').value 
+            img_url: document.getElementById('valImgUrl').value,
+            
+            // Monto total real financiero final (Base + IVA - Retencion)
+            montoTotal: parseFloat(valTotal.value) || 0,
+
+            // Bloque específico para la tabla 'compra_impuestos'
+            impuestos: {
+                porcentaje_alicuota: parseFloat(valPorcentajeAlicuota.value) || 0,
+                base_imponible: parseFloat(valBaseImponible.value) || 0,
+                monto_iva: parseFloat(document.getElementById('valMontoIva').value) || 0,
+                porcentaje_retencion: parseFloat(document.getElementById('valPorcentajeRetencion').value) || 0,
+                monto_retencion: parseFloat(document.getElementById('valMontoRetencion').value) || 0
+            }
         };
 
         try {
@@ -158,7 +238,7 @@ function initUploadForm() {
             const resGuardar = await response.json();
 
             if (response.ok) {
-                alert("¡Factura auditada con éxito! Guardada en el Libro de Compras.");
+                alert("¡Factura e Impuestos auditados con éxito!");
                 verificationForm.reset();
                 uploadForm.reset();
                 uploadLabel.innerText = "Haz clic para seleccionar la imagen de la factura";
@@ -172,11 +252,83 @@ function initUploadForm() {
     });
 }
 
+function ejecutarCalculoFiscal(base, alicuota) {
+    // Si es exento (0%), el IVA y las retenciones son matemáticamente 0 de forma inmediata
+    if (alicuota === 0) {
+        document.getElementById('valMontoIva').value = "0.00";
+        document.getElementById('valPorcentajeRetencion').value = "0";
+        document.getElementById('valMontoRetencion').value = "0.00";
+        
+        // Ocultamos contingencias porque no hay impuesto que retener
+        const contenedorCheck = document.getElementById('contenedorCheckServicio');
+        if (contenedorCheck) contenedorCheck.style.display = 'none';
+        
+        return base; // El total financiero es exactamente la base
+    }
+
+    const montoIva = base * (alicuota / 100);
+    let porcRetencion = 0;
+
+    if (configFiscalEmpresa && configFiscalEmpresa.tipo_contribuyente === 'Especial') {
+        porcRetencion = configFiscalEmpresa.porcentaje_retencion || 75;
+        if (document.getElementById('contenedorCheckServicio')) {
+            document.getElementById('contenedorCheckServicio').style.display = 'none';
+        }
+    } else {
+        if (document.getElementById('contenedorCheckServicio')) {
+            document.getElementById('contenedorCheckServicio').style.display = 'flex';
+        }
+        const esServicioRegulado = document.getElementById('checkRetencionServicio')?.checked;
+        porcRetencion = esServicioRegulado ? 5 : 0;
+    }
+
+    const montoRetencion = montoIva * (porcRetencion / 100);
+    const montoTotalFinanciero = base + montoIva - montoRetencion;
+
+    document.getElementById('valMontoIva').value = montoIva.toFixed(2);
+    document.getElementById('valPorcentajeRetencion').value = porcRetencion;
+    document.getElementById('valMontoRetencion').value = montoRetencion.toFixed(2);
+
+    return montoTotalFinanciero;
+}
+
+function recalcularDesdeTotal(total, alicuota) {
+    if (alicuota === 0) {
+        document.getElementById('valBaseImponible').value = total.toFixed(2);
+        ejecutarCalculoFiscal(total, 0);
+        return;
+    }
+
+    let porcRet = 0;
+    if (configFiscalEmpresa && configFiscalEmpresa.tipo_contribuyente === 'Especial') {
+        porcRet = configFiscalEmpresa.porcentaje_retencion || 75;
+    } else if (document.getElementById('checkRetencionServicio')?.checked) {
+        porcRet = 5;
+    }
+
+    const factorIva = alicuota / 100;
+    const factorRet = porcRet / 100;
+    
+    const baseCalculada = total / (1 + factorIva - (factorIva * factorRet));
+    
+    document.getElementById('valBaseImponible').value = baseCalculada.toFixed(2);
+    ejecutarCalculoFiscal(baseCalculada, alicuota);
+}
+
+function recalcularDesdeBase(base, alicuota) {
+    const totalFinanciero = ejecutarCalculoFiscal(base, alicuota);
+    document.getElementById('valTotal').value = totalFinanciero.toFixed(2);
+}
+
+
 /**
- * Evalúa si la extracción de datos vino completa o requiere intervención humana inmediata
+ * Evalúa si la extracción de datos e impuestos vino completa o requiere intervención humana
  */
 function verificarCalidadDatos() {
     const statusAlert = document.getElementById('statusAlert');
+    if (!statusAlert) return;
+
+    // Lista extendida con los nuevos campos fiscales obligatorios
     const inputs = [
         document.getElementById('valProveedor'),
         document.getElementById('valDireccion'),
@@ -185,15 +337,28 @@ function verificarCalidadDatos() {
         document.getElementById('valControl'),
         document.getElementById('valFecha'),
         document.getElementById('valTotal'),
-        document.getElementById('valCategoria')
+        document.getElementById('valCategoria'),
+        document.getElementById('valBaseImponible'), // <-- Nuevo auditado
+        document.getElementById('valMontoIva')        // <-- Nuevo auditado
     ];
 
     let camposIncompletos = false;
 
     // Evaluamos cada input para marcar visualmente los vacíos o los "No detectado"
     inputs.forEach(input => {
+        if (!input) return; // Salvavidas por si acaso
+        
         const val = input.value.trim().toUpperCase();
-        if (!val || val === 'NO DETECTADO' || val === 'SIN CATEGORÍA' || val === '0.00') {
+        
+        // Si el campo está vacío, es "0.00" (en campos críticos) o dice "NO DETECTADO", se marca en rojo
+        if (!val || val === 'NO DETECTADO' || val === 'SIN CATEGORÍA' || val === '0.00' || val === '0') {
+            
+            // Excepción: Si la alícuota es 0% (Exento), el IVA sí puede ser 0.00 sin ser un error
+            if (input.id === 'valMontoIva' && document.getElementById('valPorcentajeAlicuota').value === '0') {
+                input.classList.remove('missing-field');
+                return;
+            }
+
             input.classList.add('missing-field');
             camposIncompletos = true;
         } else {
@@ -201,12 +366,12 @@ function verificarCalidadDatos() {
         }
     });
 
-    // Inyección de alertas dinámicas basadas en las condiciones solicitadas
+    // Inyección de alertas dinámicas basadas en el estado del motor fiscal y OCR
     if (camposIncompletos) {
-        statusAlert.innerText = "⚠️ Campos incompletos: ingresa el dato faltante manualmente o sube nuevamente la factura más legible.";
+        statusAlert.innerText = "Campos o cálculos incompletos: Revisa los bloques marcados en rojo e ingresa los datos fiscales faltantes manualmente.";
         statusAlert.className = "status-alert warning";
     } else {
-        statusAlert.innerText = "✅ Todos los campos se extrajeron con éxito. Por favor, realiza una última verificación visual antes de guardar.";
+        statusAlert.innerText = "¡Estructura fiscal y datos extraídos con éxito! Realiza una última verificación visual de los montos antes de guardar.";
         statusAlert.className = "status-alert success";
     }
 }

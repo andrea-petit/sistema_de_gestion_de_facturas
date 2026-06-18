@@ -161,6 +161,41 @@
                                 <label>Monto Total (Bs):</label>
                                 <input type="number" step="0.01" id="valTotal" required>
                             </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; padding: 10px; background: #f1f5f9; border-radius: 6px;">
+                                <div class="form-group">
+                                    <label>Base Imponible (Calculada):</label>
+                                    <input type="number" id="valBaseImponible" step="0.01" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Alícuota IVA (%):</label>
+                                    <select id="valPorcentajeAlicuota" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
+                                        <option value="16" selected>16% (General)</option>
+                                        <option value="8">8% (Reducida)</option>
+                                        <option value="0">0% (Exento / Exonerado)</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Monto IVA:</label>
+                                    <input type="number" id="valMontoIva" step="0.01" readonly style="background: #e2e8f0;">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>% Retención IVA:</label>
+                                    <input type="number" id="valPorcentajeRetencion" step="0.01" readonly style="background: #e2e8f0;">
+                                </div>
+
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label>Monto Retenido (A deducir):</label>
+                                    <input type="number" id="valMontoRetencion" step="0.01" readonly style="background: #e2e8f0; font-weight: bold; color: #b91c1c;">
+                                </div>
+
+                                <div class="form-group" id="contenedorCheckServicio" style="grid-column: span 2; display: flex; align-items: center; gap: 8px; margin-top: 5px;">
+                                    <input type="checkbox" id="checkRetencionServicio" style="width: auto;">
+                                    <label for="checkRetencionServicio" style="margin: 0; font-size: 12px; color: #475569;">Aplicar retención manual por Servicios/Mantenimiento</label>
+                                </div>
+                            </div>
                             <div class="form-group">
                                 <label>Categoría Asignada por NLP:</label>
                                 <input type="text" id="valCategoria" required>
