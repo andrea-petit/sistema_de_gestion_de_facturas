@@ -76,6 +76,7 @@ async function initUploadForm() {
     // Elementos nuevos de impuestos
     const valTotal = document.getElementById('valTotal');
     const valBaseImponible = document.getElementById('valBaseImponible');
+    const valMontoExento = document.getElementById('valMontoExento');
     const valPorcentajeAlicuota = document.getElementById('valPorcentajeAlicuota');
     const checkRetencionServicio = document.getElementById('checkRetencionServicio');
 
@@ -130,26 +131,97 @@ async function initUploadForm() {
                 const textoCuerpo = info.textoPlano || '';
                 document.getElementById('resTextoPlano').innerText = textoCuerpo;
 
-                const totalFactura = parseFloat(info.montoTotal) || 0;
+                // Normalizador local: acepta números o strings con separadores ("2.552,97")
+                function normalizeNumber(input) {
+                    if (input === undefined || input === null) return 0;
+                    if (typeof input === 'number') return input;
+                    let s = String(input).trim();
+                    if (!s) return 0;
+                    // eliminar cualquier caracter excepto dígitos, puntos y comas
+                    s = s.replace(/[^\d.,-]/g, '');
+                    if (s.includes(',') && s.includes('.')) {
+                        s = s.replace(/\./g, '').replace(',', '.');
+                    } else if (s.includes(',')) {
+                        const parts = s.split(',');
+                        if (parts[parts.length - 1].length === 2) {
+                            s = s.replace(',', '.');
+                        } else {
+                            s = s.replace(/,/g, '');
+                        }
+                    }
+                    const n = parseFloat(s);
+                    return Number.isNaN(n) ? 0 : n;
+                }
+
+                const totalFactura = normalizeNumber(info.montoTotal) || 0;
+                const montoExentoDetectado = normalizeNumber(info.montoExento || 0) || 0;
+                const montoAfectoDetectado = normalizeNumber(info.montoAfectoIva || 0) || 0;
+                const montoIvaDetectado = normalizeNumber(info.montoIva || 0) || 0;
+
                 valTotal.value = totalFactura.toFixed(2);
-                
-                // 🚀 NUEVA ANALÍTICA: ¿La factura contiene indicios de ser exenta?
+                if (valMontoExento) valMontoExento.value = montoExentoDetectado.toFixed(2);
+                if (valBaseImponible) valBaseImponible.value = montoAfectoDetectado.toFixed(2);
+                if (document.getElementById('valMontoIva')) document.getElementById('valMontoIva').value = montoIvaDetectado.toFixed(2);
+
                 const textoUpper = textoCuerpo.toUpperCase();
                 const selectorAlicuota = document.getElementById('valPorcentajeAlicuota');
                 
                 let alicuotaADesglosar = 16; // Por defecto general
 
-                // Si el texto plano contiene "EXENTO" o múltiples marcas de exención "(E)"
-                if (textoUpper.includes("EXENTO") || (textoUpper.match(/\(E\)/g) || []).length > 2) {
+                if (montoIvaDetectado === 0 && montoAfectoDetectado === 0 && montoExentoDetectado > 0 && montoExentoDetectado >= totalFactura) {
+                    console.log("[SGAF Analizador] Factura totalmente exenta detectada.");
+                    alicuotaADesglosar = 0;
+                    if (selectorAlicuota) selectorAlicuota.value = "0";
+                } else if (textoUpper.includes("EXENTO") || (textoUpper.match(/\(E\)/g) || []).length > 2) {
                     console.log("[SGAF Analizador] Se detectó comportamiento exento (0% IVA).");
                     alicuotaADesglosar = 0;
-                    if (selectorAlicuota) selectorAlicuota.value = "0"; // Cambia el select del formulario de forma visual
+                    if (selectorAlicuota) selectorAlicuota.value = "0";
                 } else {
-                    if (selectorAlicuota) selectorAlicuota.value = "16";
+                    if (selectorAlicuota) selectorAlicuota.value = selectorAlicuota.value || "16";
                 }
                 
-                // Ejecuta el recálculo con la alícuota descubierta por el analizador
-                recalcularDesdeTotal(totalFactura, alicuotaADesglosar);
+                // Preferir la Base Imponible detectada por OCR si está disponible
+                // Si no está, intentamos extraer localmente desde el texto plano mostrado (resTextoPlano)
+                function extractFromRawText(labelRegex) {
+                    const raw = (document.getElementById('resTextoPlano')?.innerText || '').toUpperCase();
+                    const lines = raw.split(/\n|\r/).map(l => l.trim()).filter(Boolean);
+                    for (let i = 0; i < lines.length; i++) {
+                        if (labelRegex.test(lines[i])) {
+                            // buscar en la misma línea
+                            const m = lines[i].match(/([\d.]+,\d{2})|([\d,]+\.\d{2})/);
+                            if (m) return normalizeNumber(m[0]);
+                            // buscar en la siguiente línea
+                            if (i + 1 < lines.length) {
+                                const m2 = lines[i+1].match(/([\d.]+,\d{2})|([\d,]+\.\d{2})/);
+                                if (m2) return normalizeNumber(m2[0]);
+                            }
+                        }
+                    }
+                    return 0;
+                }
+
+                let finalBase = montoAfectoDetectado;
+                let finalIva = montoIvaDetectado;
+
+                if (finalBase <= 0) {
+                    finalBase = extractFromRawText(/BI\s*G|BASE\s*IMPONIBLE|SUBTOTAL\s*IVA/i);
+                }
+                if (finalIva <= 0) {
+                    finalIva = extractFromRawText(/IVA|IVA\s*G|16\s*%/i);
+                }
+
+                if (finalBase > 0) {
+                    // Actualizamos visualmente la Base e IVA (si es posible)
+                    if (valBaseImponible) valBaseImponible.value = finalBase.toFixed(2);
+                    recalcularDesdeBase(finalBase, alicuotaADesglosar, montoExentoDetectado);
+                } else if (finalIva > 0) {
+                    const factor = alicuotaADesglosar / 100 || 0.16;
+                    const baseFromIva = finalIva / factor;
+                    if (valBaseImponible) valBaseImponible.value = baseFromIva.toFixed(2);
+                    recalcularDesdeBase(baseFromIva, alicuotaADesglosar, montoExentoDetectado);
+                } else {
+                    recalcularDesdeTotal(totalFactura, alicuotaADesglosar, montoExentoDetectado);
+                }
 
                 verificarCalidadDatos();
                 resultSection.style.display = 'block';
@@ -169,7 +241,8 @@ async function initUploadForm() {
         valTotal.addEventListener('input', () => {
             const total = parseFloat(valTotal.value) || 0;
             const alicuota = parseFloat(valPorcentajeAlicuota.value) || 0;
-            recalcularDesdeTotal(total, alicuota);
+            const montoExento = parseFloat(valMontoExento?.value) || 0;
+            recalcularDesdeTotal(total, alicuota, montoExento);
         });
     }
 
@@ -177,7 +250,17 @@ async function initUploadForm() {
         valBaseImponible.addEventListener('input', () => {
             const base = parseFloat(valBaseImponible.value) || 0;
             const alicuota = parseFloat(valPorcentajeAlicuota.value) || 0;
-            recalcularDesdeBase(base, alicuota);
+            const montoExento = parseFloat(valMontoExento?.value) || 0;
+            recalcularDesdeBase(base, alicuota, montoExento);
+        });
+    }
+
+    if (valMontoExento) {
+        valMontoExento.addEventListener('input', () => {
+            const montoExento = parseFloat(valMontoExento.value) || 0;
+            const base = parseFloat(valBaseImponible.value) || 0;
+            const alicuota = parseFloat(valPorcentajeAlicuota.value) || 0;
+            recalcularDesdeBase(base, alicuota, montoExento);
         });
     }
 
@@ -185,7 +268,8 @@ async function initUploadForm() {
         valPorcentajeAlicuota.addEventListener('change', () => {
             const base = parseFloat(valBaseImponible.value) || 0;
             const alicuota = parseFloat(valPorcentajeAlicuota.value) || 0;
-            recalcularDesdeBase(base, alicuota);
+            const montoExento = parseFloat(valMontoExento?.value) || 0;
+            recalcularDesdeBase(base, alicuota, montoExento);
         });
     }
 
@@ -193,7 +277,8 @@ async function initUploadForm() {
         checkRetencionServicio.addEventListener('change', () => {
             const base = parseFloat(valBaseImponible.value) || 0;
             const alicuota = parseFloat(valPorcentajeAlicuota.value) || 0;
-            recalcularDesdeBase(base, alicuota);
+            const montoExento = parseFloat(valMontoExento?.value) || 0;
+            recalcularDesdeBase(base, alicuota, montoExento);
         });
     }
 
@@ -216,15 +301,12 @@ async function initUploadForm() {
             
             // Monto total real financiero final (Base + IVA - Retencion)
             montoTotal: parseFloat(valTotal.value) || 0,
-
-            // Bloque específico para la tabla 'compra_impuestos'
-            impuestos: {
-                porcentaje_alicuota: parseFloat(valPorcentajeAlicuota.value) || 0,
-                base_imponible: parseFloat(valBaseImponible.value) || 0,
-                monto_iva: parseFloat(document.getElementById('valMontoIva').value) || 0,
-                porcentaje_retencion: parseFloat(document.getElementById('valPorcentajeRetencion').value) || 0,
-                monto_retencion: parseFloat(document.getElementById('valMontoRetencion').value) || 0
-            }
+            porcentaje_alicuota: parseFloat(valPorcentajeAlicuota.value) || 0,
+            montoExento: parseFloat(valMontoExento?.value) || 0,
+            montoAfectoIva: parseFloat(valBaseImponible.value) || 0,
+            montoIva: parseFloat(document.getElementById('valMontoIva').value) || 0,
+            porcentaje_retencion: parseFloat(document.getElementById('valPorcentajeRetencion').value) || 0,
+            monto_retencion: parseFloat(document.getElementById('valMontoRetencion').value) || 0
         };
 
         try {
@@ -252,71 +334,73 @@ async function initUploadForm() {
     });
 }
 
-function ejecutarCalculoFiscal(base, alicuota) {
-    // Si es exento (0%), el IVA y las retenciones son matemáticamente 0 de forma inmediata
+function getRetencionPorcentaje() {
+    if (configFiscalEmpresa && configFiscalEmpresa.tipo_contribuyente === 'Especial') {
+        return configFiscalEmpresa.porcentaje_retencion || 75;
+    }
+    return document.getElementById('checkRetencionServicio')?.checked ? 5 : 0;
+}
+
+function ejecutarCalculoFiscal(base, alicuota, montoExento = 0) {
+    const montoExentoSeguro = Math.max(0, montoExento);
+    const retencion = getRetencionPorcentaje();
+
     if (alicuota === 0) {
         document.getElementById('valMontoIva').value = "0.00";
         document.getElementById('valPorcentajeRetencion').value = "0";
         document.getElementById('valMontoRetencion').value = "0.00";
-        
-        // Ocultamos contingencias porque no hay impuesto que retener
+
         const contenedorCheck = document.getElementById('contenedorCheckServicio');
         if (contenedorCheck) contenedorCheck.style.display = 'none';
-        
-        return base; // El total financiero es exactamente la base
+
+        if (document.getElementById('valBaseImponible')) {
+            document.getElementById('valBaseImponible').value = "0.00";
+        }
+        return montoExentoSeguro; // El total financiero es exactamente el monto exento
     }
 
     const montoIva = base * (alicuota / 100);
-    let porcRetencion = 0;
-
-    if (configFiscalEmpresa && configFiscalEmpresa.tipo_contribuyente === 'Especial') {
-        porcRetencion = configFiscalEmpresa.porcentaje_retencion || 75;
-        if (document.getElementById('contenedorCheckServicio')) {
-            document.getElementById('contenedorCheckServicio').style.display = 'none';
-        }
-    } else {
-        if (document.getElementById('contenedorCheckServicio')) {
-            document.getElementById('contenedorCheckServicio').style.display = 'flex';
-        }
-        const esServicioRegulado = document.getElementById('checkRetencionServicio')?.checked;
-        porcRetencion = esServicioRegulado ? 5 : 0;
-    }
-
-    const montoRetencion = montoIva * (porcRetencion / 100);
-    const montoTotalFinanciero = base + montoIva - montoRetencion;
+    const montoRetencion = montoIva * (retencion / 100);
+    const montoTotalFinanciero = montoExentoSeguro + base + montoIva - montoRetencion;
 
     document.getElementById('valMontoIva').value = montoIva.toFixed(2);
-    document.getElementById('valPorcentajeRetencion').value = porcRetencion;
+    document.getElementById('valPorcentajeRetencion').value = retencion;
     document.getElementById('valMontoRetencion').value = montoRetencion.toFixed(2);
 
     return montoTotalFinanciero;
 }
 
-function recalcularDesdeTotal(total, alicuota) {
+function recalcularDesdeTotal(total, alicuota, montoExento = 0) {
     if (alicuota === 0) {
-        document.getElementById('valBaseImponible').value = total.toFixed(2);
-        ejecutarCalculoFiscal(total, 0);
+        if (document.getElementById('valMontoExento')) {
+            document.getElementById('valMontoExento').value = total.toFixed(2);
+        }
+        if (document.getElementById('valBaseImponible')) {
+            document.getElementById('valBaseImponible').value = "0.00";
+        }
+        ejecutarCalculoFiscal(0, 0, total);
         return;
     }
 
-    let porcRet = 0;
-    if (configFiscalEmpresa && configFiscalEmpresa.tipo_contribuyente === 'Especial') {
-        porcRet = configFiscalEmpresa.porcentaje_retencion || 75;
-    } else if (document.getElementById('checkRetencionServicio')?.checked) {
-        porcRet = 5;
-    }
-
+    const porcRet = getRetencionPorcentaje();
     const factorIva = alicuota / 100;
     const factorRet = porcRet / 100;
-    
-    const baseCalculada = total / (1 + factorIva - (factorIva * factorRet));
-    
-    document.getElementById('valBaseImponible').value = baseCalculada.toFixed(2);
-    ejecutarCalculoFiscal(baseCalculada, alicuota);
+    const montoExentoSeguro = Math.max(0, montoExento);
+    const taxedTotal = Math.max(0, total - montoExentoSeguro);
+    const baseCalculada = taxedTotal / (1 + factorIva - (factorIva * factorRet));
+
+    if (document.getElementById('valBaseImponible')) {
+        document.getElementById('valBaseImponible').value = baseCalculada.toFixed(2);
+    }
+    if (document.getElementById('valMontoExento')) {
+        document.getElementById('valMontoExento').value = montoExentoSeguro.toFixed(2);
+    }
+
+    ejecutarCalculoFiscal(baseCalculada, alicuota, montoExentoSeguro);
 }
 
-function recalcularDesdeBase(base, alicuota) {
-    const totalFinanciero = ejecutarCalculoFiscal(base, alicuota);
+function recalcularDesdeBase(base, alicuota, montoExento = 0) {
+    const totalFinanciero = ejecutarCalculoFiscal(base, alicuota, montoExento);
     document.getElementById('valTotal').value = totalFinanciero.toFixed(2);
 }
 
@@ -339,6 +423,7 @@ function verificarCalidadDatos() {
         document.getElementById('valTotal'),
         document.getElementById('valCategoria'),
         document.getElementById('valBaseImponible'), // <-- Nuevo auditado
+        document.getElementById('valMontoExento'),
         document.getElementById('valMontoIva')        // <-- Nuevo auditado
     ];
 
@@ -351,10 +436,18 @@ function verificarCalidadDatos() {
         const val = input.value.trim().toUpperCase();
         
         // Si el campo está vacío, es "0.00" (en campos críticos) o dice "NO DETECTADO", se marca en rojo
-        if (!val || val === 'NO DETECTADO' || val === 'SIN CATEGORÍA' || val === '0.00' || val === '0') {
-            
-            // Excepción: Si la alícuota es 0% (Exento), el IVA sí puede ser 0.00 sin ser un error
+            if (!val || val === 'NO DETECTADO' || val === 'SIN CATEGORÍA' || val === '0.00' || val === '0') {
+
+            // Excepción: Si la alícuota es 0% (Exento), el IVA y la Base Imponible pueden ser 0.00 sin ser un error
             if (input.id === 'valMontoIva' && document.getElementById('valPorcentajeAlicuota').value === '0') {
+                input.classList.remove('missing-field');
+                return;
+            }
+            if (input.id === 'valBaseImponible' && document.getElementById('valPorcentajeAlicuota').value === '0') {
+                input.classList.remove('missing-field');
+                return;
+            }
+            if (input.id === 'valMontoExento' && document.getElementById('valPorcentajeAlicuota').value !== '0') {
                 input.classList.remove('missing-field');
                 return;
             }
@@ -1008,3 +1101,4 @@ async function alternarEstadoUsuario(id, username, operadorRol) {
         alert(`Error: ${err.message}`);
     }
 }
+

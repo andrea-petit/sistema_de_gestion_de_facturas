@@ -38,25 +38,63 @@ function roundToTwo(value) {
 
 function extractAmountFromLine(line) {
   if (!line) return 0.00;
-  // Captura formatos: 18.567,48 o 18567.48 o 536,96
-  const match = line.match(/([\d.]+,\d{2})|([\d,]+\.\d{2})|(\b\d{2,}\b)/);
+  // Captura formatos con decimales: 18.567,48 o 18567.48 o 536,96
+  const match = line.match(/([\d.]+,\d{2})|([\d,]+\.\d{2})/);
   if (!match) return 0.00;
   return parseMonetaryValue(match[0]);
 }
 
-// Analiza la línea actual y la subsiguiente por si el monto fiscal quedó abajo
-function findAmountByLabel(lines, labelRegex) {
+// Specialized extractor for IVA amounts: prefers a number following 'IVA' within 40 chars and a preceding 'Bs'
+function findIvaAmount(lines) {
+  const moneyRegexGlobal = /([\d.]+,\d{2})|([\d,]+\.\d{2})/g;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    if (labelRegex.test(line)) {
-      // Estrategia A: El monto está en la misma línea
-      let amount = extractAmountFromLine(line);
-      if (amount > 0) return amount;
-
-      // Estrategia B: El monto está en la línea inmediatamente inferior (Común en Tablas Markdown)
+    if (/\bIVA\b|IVA\s*G/i.test(line)) {
+      const ivaAfter = line.match(/IVA[\s\S]{0,40}?Bs\s*(([\d.]+,\d{2})|([\d,]+\.\d{2}))/i);
+      if (ivaAfter && ivaAfter[1]) { return parseMonetaryValue(ivaAfter[1]); }
+      const all = Array.from(line.matchAll(moneyRegexGlobal)).map(m => m[0]);
+      if (all.length > 0) return parseMonetaryValue(all[all.length - 1]);
       if (i + 1 < lines.length) {
-        amount = extractAmountFromLine(lines[i + 1]);
-        if (amount > 0) return amount;
+        const nextMatches = Array.from(lines[i + 1].matchAll(moneyRegexGlobal)).map(m => m[0]);
+        if (nextMatches.length > 0) return parseMonetaryValue(nextMatches[0]);
+      }
+    }
+  }
+  return 0.00;
+}
+
+// Specialized extractor for Base Imponible: prefers a number following BI G / BASE ... within 40 chars and a preceding 'Bs'
+function findBaseAmount(lines) {
+  const moneyRegexGlobal = /([\d.]+,\d{2})|([\d,]+\.\d{2})/g;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/BI\s*G|BASE\s*IMPONIBLE|BASE\s*IVA|SUBTOTAL\s*IVA/i.test(line)) {
+      const baseAfter = line.match(/(?:BI\s*G|BASE\s*IMPONIBLE|BASE\s*IVA|SUBTOTAL\s*IVA)[\s\S]{0,40}?Bs\s*(([\d.]+,\d{2})|([\d,]+\.\d{2}))/i);
+      if (baseAfter && baseAfter[1]) { return parseMonetaryValue(baseAfter[1]); }
+      const all = Array.from(line.matchAll(moneyRegexGlobal)).map(m => m[0]);
+      if (all.length > 0) return parseMonetaryValue(all[0]);
+      if (i + 1 < lines.length) {
+        const nextMatches = Array.from(lines[i + 1].matchAll(moneyRegexGlobal)).map(m => m[0]);
+        if (nextMatches.length > 0) return parseMonetaryValue(nextMatches[0]);
+      }
+    }
+  }
+  return 0.00;
+}
+
+// Extractor para montos exentos
+function findExentoAmount(lines) {
+  const moneyRegexGlobal = /([\d.]+,\d{2})|([\d,]+\.\d{2})/g;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/\bEXENT[OA]S?\b|(?:\s|^)E1(?:\s|$)|(?:\s|^)\(E\)(?:\s|$)/i.test(line)) {
+      const after = line.match(/EXENT[OA]S?[\s\S]{0,40}?Bs\s*(([\d.]+,\d{2})|([\d,]+\.\d{2}))/i);
+      if (after && after[1]) return parseMonetaryValue(after[1]);
+      const all = Array.from(line.matchAll(moneyRegexGlobal)).map(m => m[0]);
+      if (all.length > 0) return parseMonetaryValue(all[all.length - 1]);
+      if (i + 1 < lines.length) {
+        const nextMatches = Array.from(lines[i + 1].matchAll(moneyRegexGlobal)).map(m => m[0]);
+        if (nextMatches.length > 0) return parseMonetaryValue(nextMatches[0]);
       }
     }
   }
@@ -248,9 +286,10 @@ async function extraerDatosFactura(imagePath) {
     // Añadimos variantes comunes que imprimen las máquinas fiscales (E1, E2, (E), EX.)
     const tienePalabraExento = /\bEXENT[OA]S?\b|(?:\s|^)E1(?:\s|$)|(?:\s|^)\(E\)(?:\s|$)/i.test(textMarkdown);
     
-    const montoExentoDetectado = findAmountByLabel(lineas, /\bEXENT[OA]S?\b|(?:\s|^)E1(?:\s|$)/i);
-    const montoIvaDetectado = findAmountByLabel(lineas, /\bIVA\b|\bBI\s*G|\bIVA\s*G|16\s*%/i); 
-    const baseImponibleDetectado = findAmountByLabel(lineas, /BASE\s*IMPONIBLE|BASE\s*IVA|SUBTOTAL\s*IVA|BI\s*G/i);
+    const montoExentoDetectado = findExentoAmount(lineas);
+    // Buscar IVA usando detectores especializados
+    const montoIvaDetectado = findIvaAmount(lineas);
+    const baseImponibleDetectado = findBaseAmount(lineas);
 
     // Asignación inicial
     datosFactura.montoExento = roundToTwo(montoExentoDetectado);

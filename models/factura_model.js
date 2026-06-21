@@ -7,12 +7,19 @@ const facturaModel = {
         const montoExento = Number(facturaData.monto_exento || 0.00);
         const montoAfectoIva = Number(facturaData.monto_afecto_iva || 0.00);
         const montoIva = Number(facturaData.monto_iva || 0.00);
+        const porcentajeAlicuota = Number.isFinite(Number(facturaData.porcentaje_alicuota))
+            ? Number(facturaData.porcentaje_alicuota)
+            : 16.00;
+        const porcentajeRetencion = Number.isFinite(Number(facturaData.porcentaje_retencion))
+            ? Number(facturaData.porcentaje_retencion)
+            : 0.00;
 
         let baseImponible = montoAfectoIva;
         let ivaCalculado = montoIva;
+        const factorIva = porcentajeAlicuota / 100;
 
-        if (baseImponible <= 0 && montoIva > 0) {
-            baseImponible = Number((montoIva / 0.16).toFixed(2));
+        if (baseImponible <= 0 && montoIva > 0 && factorIva > 0) {
+            baseImponible = Number((montoIva / factorIva).toFixed(2));
         }
 
         if (baseImponible <= 0 && montoTotal > 0) {
@@ -20,8 +27,9 @@ const facturaModel = {
                 baseImponible = 0.00;
                 ivaCalculado = 0.00;
             } else {
-                baseImponible = Number(Math.max(0, montoTotal - montoExento).toFixed(2));
-                ivaCalculado = Number((baseImponible * 0.16).toFixed(2));
+                const taxedTotal = Math.max(0, montoTotal - montoExento);
+                baseImponible = Number((taxedTotal / (1 + factorIva)).toFixed(2));
+                ivaCalculado = Number((baseImponible * factorIva).toFixed(2));
             }
         }
 
@@ -30,17 +38,13 @@ const facturaModel = {
             ivaCalculado = 0.00;
         }
 
-        const porcentajeRetencion = Number.isFinite(Number(facturaData.porcentaje_retencion))
-            ? Number(facturaData.porcentaje_retencion)
-            : 0.00;
-
         let montoRetencion = 0.00;
         if (porcentajeRetencion > 0 && ivaCalculado > 0) {
             montoRetencion = Number((ivaCalculado * porcentajeRetencion / 100).toFixed(2));
         }
 
         return {
-            porcentaje_alicuota: 16.00,
+            porcentaje_alicuota: Number(porcentajeAlicuota.toFixed(2)),
             base_imponible: baseImponible,
             monto_iva: ivaCalculado,
             porcentaje_retencion: Number(porcentajeRetencion.toFixed(2)),
@@ -133,52 +137,52 @@ const facturaModel = {
 
     createFactura(facturaData) {
         return new Promise((resolve, reject) => {
-            const self = this;
-            try {
-                empresaModel.getTipoContribuyente()
-                    .then((tipoContribuyente) => {
-                        try {
-                            const queryText = tipoContribuyente === 'Ordinario'
-                                ? 'INSERT INTO compras (proveedor_id, fecha_emision, numero_factura, numero_control, monto_total, categoria, img_url) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *'
-                                : 'INSERT INTO compras (proveedor_id, comprobante_retencion, fecha_emision, numero_factura, numero_control, monto_total, categoria, img_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *';
+            const porcentajeAlicuota = Number.isFinite(Number(facturaData.porcentaje_alicuota))
+                ? Number(facturaData.porcentaje_alicuota)
+                : 16.00;
+            const porcentajeRetencion = Number.isFinite(Number(facturaData.porcentaje_retencion))
+                ? Number(facturaData.porcentaje_retencion)
+                : 0.00;
 
-                            const porcentajeRetencionUsuario = self.normalizeRetencionPorcentaje(facturaData.porcentaje_retencion);
-                            if (tipoContribuyente === 'Ordinario') {
-                                facturaData.porcentaje_retencion = self.isValidRetentionSelection(porcentajeRetencionUsuario)
-                                    ? porcentajeRetencionUsuario
-                                    : 0.00;
-                            } else {
-                                facturaData.porcentaje_retencion = 75.00;
-                            }
+            const impuestoData = this.calculateImpuestos({
+                monto_total: facturaData.monto_total,
+                monto_exento: facturaData.monto_exento,
+                monto_afecto_iva: facturaData.monto_afecto_iva,
+                monto_iva: facturaData.monto_iva,
+                porcentaje_alicuota: porcentajeAlicuota,
+                porcentaje_retencion: porcentajeRetencion
+            });
 
-                            const queryValues = tipoContribuyente === 'Ordinario'
-                                ? [facturaData.proveedor_id, facturaData.fecha_emision, facturaData.numero_factura, facturaData.numero_control, facturaData.monto_total, facturaData.categoria, facturaData.img_url]
-                                : [facturaData.proveedor_id, facturaData.comprobante_retencion || null, facturaData.fecha_emision, facturaData.numero_factura, facturaData.numero_control, facturaData.monto_total, facturaData.categoria, facturaData.img_url];
+            const queryText = 'INSERT INTO compras (proveedor_id, comprobante_retencion, fecha_emision, numero_factura, numero_control, monto_total, categoria, img_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *';
+            const queryValues = [
+                facturaData.proveedor_id,
+                facturaData.comprobante_retencion || null,
+                facturaData.fecha_emision,
+                facturaData.numero_factura,
+                facturaData.numero_control,
+                facturaData.monto_total || 0.00,
+                facturaData.categoria,
+                facturaData.img_url || null
+            ];
 
-                            pool.query(queryText, queryValues, (error, results) => {
-                                if (error) {
-                                    return reject(error);
-                                }
-                                const compraCreada = results.rows && results.rows[0] ? results.rows[0] : null;
-                                if (!compraCreada) {
-                                    return reject(new Error('No se pudo crear la compra')); 
-                                }
+            pool.query(queryText, queryValues, async (error, results) => {
+                if (error) {
+                    return reject(error);
+                }
 
-                                const impuestoData = self.calculateImpuestos(facturaData);
-                                self.createCompraImpuesto(compraCreada.id, impuestoData)
-                                    .then(() => resolve(compraCreada))
-                                    .catch((impuestoError) => reject(impuestoError));
-                            });
-                        } catch (error) {
-                            reject(error);
-                        }
-                    })
-                    .catch((error) => {
-                        reject(error);
-                    });
-            } catch (error) {
-                reject(error);
-            }
+                const nuevaCompra = results.rows && results.rows[0] ? results.rows[0] : null;
+                if (!nuevaCompra) {
+                    return resolve(null);
+                }
+
+                try {
+                    const compraImpuesto = await this.createCompraImpuesto(nuevaCompra.id, impuestoData);
+                    nuevaCompra.impuesto = compraImpuesto;
+                    resolve(nuevaCompra);
+                } catch (insertError) {
+                    reject(insertError);
+                }
+            });
         });
     },
 

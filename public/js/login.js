@@ -1,5 +1,5 @@
 const form = document.getElementById("formulario-login");
-const vistaLogin = document.getElementById("pantalla-login");
+const vistaLogin = document.getElementById("login_container");
 // Nota: ya no usamos la pantalla-sistema; usaremos SweetAlert para notificaciones
 const errorDiv = document.getElementById("caja-error");
 
@@ -40,7 +40,7 @@ form.addEventListener("submit", async (e) => {
           icon: 'success',
           title: 'Acceso concedido',
           text: 'Redirigiendo al dashboard...',
-          timer: 2000,
+          timer: 1200,
           showConfirmButton: false,
           timerProgressBar: true,
         }).then(() => {
@@ -48,7 +48,7 @@ form.addEventListener("submit", async (e) => {
         });
       } else {
         // Fallback simple
-        setTimeout(() => window.location.replace('/dashboard'), 2000);
+        setTimeout(() => window.location.replace('/dashboard'), 1200);
       }
     } else {
       errorDiv.innerText = datos.msg;

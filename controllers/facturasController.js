@@ -115,21 +115,63 @@ const facturasController = {
         const categoriaId = await categoriasModel.getOrCreateCategoryId(categoria || 'Sin categoría');
 
         // 3. Preparación del objeto estructurado para la base de datos
-        // Nota: El desglose exacto de IVA se calcula en el servicio de OCR o puedes recalcularlo aquí
+        // Normalizamos montos admitiendo tanto strings con separadores ("2.961,45") como números
+        function parseMonetary(value) {
+          if (value === undefined || value === null) return 0.00;
+          if (typeof value === 'number') return Number(Number(value).toFixed(2));
+          let v = String(value).trim();
+          if (!v) return 0.00;
+          v = v.replace(/[^\d.,-]/g, '');
+          if (v.includes(',') && v.includes('.')) {
+            v = v.replace(/\./g, '').replace(',', '.');
+          } else if (v.includes(',')) {
+            const parts = v.split(',');
+            if (parts[parts.length - 1].length === 2) {
+              v = v.replace(',', '.');
+            } else {
+              v = v.replace(/,/g, '');
+            }
+          }
+          const parsed = parseFloat(v);
+          return Number.isNaN(parsed) ? 0.00 : Number(parsed.toFixed(2));
+        }
+
+        const monto_total_norm = parseMonetary(montoTotal || req.body.montoTotal);
+        const monto_exento_norm = parseMonetary(req.body.montoExento);
+        const monto_afecto_norm = parseMonetary(req.body.montoAfectoIva);
+        const monto_iva_norm = parseMonetary(req.body.montoIva);
+        const porcentaje_alicuota_norm = Number.isFinite(Number(req.body.porcentaje_alicuota)) ? Number(req.body.porcentaje_alicuota) : 0.00;
+        const porcentaje_retencion_norm = Number.isFinite(Number(req.body.porcentaje_retencion)) ? Number(req.body.porcentaje_retencion) : 0.00;
+
         const facturaData = {
           proveedor_id: proveedorDb.id,
           fecha_emision: fechaEmision,
           numero_factura: nroFactura,
           numero_control: nroControl || nroFactura,
-          monto_total: montoTotal || 0.00,
-          monto_exento: req.body.montoExento || 0.00, 
-          monto_afecto_iva: req.body.montoAfectoIva || 0.00,
-          monto_iva: req.body.montoIva || 0.00,
+          monto_total: monto_total_norm,
+          monto_exento: monto_exento_norm,
+          monto_afecto_iva: monto_afecto_norm,
+          monto_iva: monto_iva_norm,
+          porcentaje_alicuota: porcentaje_alicuota_norm,
           categoria: categoriaId,
-          porcentaje_retencion: req.body.porcentaje_retencion || 0.00,
+          porcentaje_retencion: porcentaje_retencion_norm,
           comprobante_retencion: req.body.comprobante_retencion || null,
           img_url: img_url
         };
+
+        // Log de diagnóstico para identificar inconsistencias como las que reportaste
+        console.log('[facturasController] Payload normalizado recibido:', {
+          monto_total: facturaData.monto_total,
+          monto_exento: facturaData.monto_exento,
+          monto_afecto_iva: facturaData.monto_afecto_iva,
+          monto_iva: facturaData.monto_iva,
+          porcentaje_alicuota: facturaData.porcentaje_alicuota,
+          porcentaje_retencion: facturaData.porcentaje_retencion
+        });
+
+        // Recalcular impuestos en backend para asegurar consistencia
+        const impuestoCalc = facturaModel.calculateImpuestos(facturaData);
+        console.log('[facturasController] Impuestos calculados en backend:', impuestoCalc);
 
         // 4. Protección contra duplicados en el Libro de Compras
         const facturaExistente = await facturaModel.getFacturaByProveedorAndNumero(facturaData.proveedor_id, facturaData.numero_factura);
