@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -44,7 +44,7 @@
         .view-panel.active { display: block; }
 
         /* --- UI Elements --- */
-        .container-box { max-width: 750px; background: var(--card); padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+        .container-box { max-width: 750px; background: var(--card); padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid var(--border); margin-bottom: 20px; }
         h2 { font-size: 22px; color: #0f172a; margin-bottom: 8px; }
         .description { color: var(--text-muted); margin-bottom: 24px; font-size: 15px; }
 
@@ -69,8 +69,8 @@
         /* --- Formulario de Verificación del Usuario --- */
         .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
         .form-group label { font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 6px; }
-        .form-group input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; font-family: inherit; color: #0f172a; }
-        .form-group input:focus { outline: 2px solid var(--primary); }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; font-family: inherit; color: #0f172a; background-color: #fff; }
+        .form-group input:focus, .form-group select:focus { outline: 2px solid var(--primary); }
         .form-group input.missing-field { border-color: var(--warning); background-color: #fffaf8; }
 
         .raw-text { background: #1e293b; color: #38bdf8; padding: 15px; border-radius: 6px; max-height: 150px; overflow-y: auto; font-size: 12px; white-space: pre-wrap; margin-top: 10px; }
@@ -86,20 +86,50 @@
                 <button class="menu-btn">Facturas</button>
                 <div class="submenu">
                     <a href="#subir-facturas" class="submenu-link active" onclick="switchView('subir-facturas', this)">Subir Facturas</a>
-                    <a href="#ver-facturas" class="submenu-link" onclick="switchView('ver-facturas', this)">Ver Facturas</a>
                     <a href="#buscar-factura" class="submenu-link" onclick="switchView('buscar-factura', this)">Buscar Factura</a>
                     <a href="#editar-factura" class="submenu-link" onclick="switchView('editar-factura', this)">Editar Factura</a>
                 </div>
             </div>
-            <div class="menu-item"><button class="menu-btn">Gastos</button><div class="submenu"><a href="#categoria-gastos" class="submenu-link" onclick="switchView('categoria-gastos', this)">Categoría de Gastos</a></div></div>
-            <div class="menu-item"><button class="menu-btn">Retenciones</button><div class="submenu"><a href="#generar-retencion" class="submenu-link" onclick="switchView('generar-retencion', this)">Generar Retención</a></div></div>
-            <div class="menu-item"><button class="menu-btn">Proveedores</button><div class="submenu"><a href="#ver-proveedores" class="submenu-link" onclick="switchView('ver-proveedores', this)">Ver Proveedores</a></div></div>
-            <div class="menu-item"><button class="menu-btn">Reportes</button><div class="submenu"><a href="#generar-reporte" class="submenu-link" onclick="switchView('generar-reporte', this)">Generar Reporte</a></div></div>
-            <div class="menu-item"><button class="menu-btn">Historial</button><div class="submenu"><a href="#ver-historial" class="submenu-link" onclick="switchView('ver-historial', this)">Ver Historial</a></div></div>
+            <div class="menu-item">
+                <button class="menu-btn">Gastos</button>
+                <div class="submenu">
+                    <a href="#categoria-gastos" class="submenu-link" onclick="switchView('categoria-gastos', this)">Categoría de Gastos</a>
+                </div>
+            </div>
+            <div class="menu-item">
+                <button class="menu-btn">Retenciones</button>
+                <div class="submenu">
+                    <a href="#comprobante-retencion" class="submenu-link" onclick="switchView('comprobante-retencion', this)">Buscar Comprobante</a>
+                </div>
+            </div>
+            <div class="menu-item">
+                <button class="menu-btn">Proveedores</button>
+                <div class="submenu">
+                    <a href="#ver-proveedores" class="submenu-link" onclick="switchView('ver-proveedores', this)">Ver Proveedores</a>
+                </div>
+            </div>
+            <div class="menu-item">
+                <button class="menu-btn">Reportes</button>
+                <div class="submenu">
+                    <a href="#generar-reporte" class="submenu-link" onclick="switchView('generar-reporte', this)">Generar Reporte</a>
+                </div>
+            </div>
+            <div class="menu-item">
+                <button class="menu-btn">Historial</button>
+                <div class="submenu">
+                    <a href="#ver-historial" class="submenu-link" onclick="switchView('ver-historial', this)">Ver Historial</a>
+                </div>
+            </div>
             <div class="menu-item" id="menuItemUsuarios">
                 <button class="menu-btn">Seguridad</button>
                 <div class="submenu">
                     <a href="#usuarios" class="submenu-link" onclick="switchView('usuarios', this)">Control de Usuarios</a>
+                </div>
+            </div>
+            <div class="menu-item">
+                <button class="menu-btn">Configuración</button>
+                <div class="submenu">
+                    <a href="#perfil" class="submenu-link" onclick="switchView('perfil', this)">Perfil de Empresa</a>
                 </div>
             </div>
         </div>
@@ -125,9 +155,7 @@
                     <div class="loading" id="loadingText">Procesando imagen con IA... Esto puede tomar unos segundos.</div>
                     
                     <div class="result-section" id="resultSection">
-                        
                         <div id="statusAlert" class="status-alert"></div>
-
                         <h3 style="color: #0f172a; margin-bottom: 15px;">Formulario de Verificación Fiscal:</h3>
                         
                         <form id="verificationForm">
@@ -161,6 +189,7 @@
                                 <label>Monto Total (Bs):</label>
                                 <input type="number" step="0.01" id="valTotal" required>
                             </div>
+                            
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; padding: 10px; background: #f1f5f9; border-radius: 6px;">
                                 <div class="form-group">
                                     <label>Base Imponible (Calculada):</label>
@@ -170,41 +199,36 @@
                                     <label>Monto Exento (Bs):</label>
                                     <input type="number" id="valMontoExento" step="0.01" value="0.00">
                                 </div>
-                                
                                 <div class="form-group">
                                     <label>Alícuota IVA (%):</label>
-                                    <select id="valPorcentajeAlicuota" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
+                                    <select id="valPorcentajeAlicuota">
                                         <option value="16" selected>16% (General)</option>
                                         <option value="8">8% (Reducida)</option>
                                         <option value="0">0% (Exento / Exonerado)</option>
                                     </select>
                                 </div>
-
                                 <div class="form-group">
                                     <label>Monto IVA:</label>
                                     <input type="number" id="valMontoIva" step="0.01" readonly style="background: #e2e8f0;">
                                 </div>
-
                                 <div class="form-group">
                                     <label>% Retención IVA:</label>
                                     <input type="number" id="valPorcentajeRetencion" step="0.01" readonly style="background: #e2e8f0;">
                                 </div>
-
                                 <div class="form-group" style="grid-column: span 2;">
                                     <label>Monto Retenido (A deducir):</label>
                                     <input type="number" id="valMontoRetencion" step="0.01" readonly style="background: #e2e8f0; font-weight: bold; color: #b91c1c;">
                                 </div>
-
                                 <div class="form-group" id="contenedorCheckServicio" style="grid-column: span 2; display: flex; align-items: center; gap: 8px; margin-top: 5px;">
                                     <input type="checkbox" id="checkRetencionServicio" style="width: auto;">
                                     <label for="checkRetencionServicio" style="margin: 0; font-size: 12px; color: #475569;">Aplicar retención manual por Servicios/Mantenimiento</label>
                                 </div>
                             </div>
-                            <div class="form-group">
+                            
+                            <div class="form-group" style="margin-top: 15px;">
                                 <label>Categoría Asignada por NLP:</label>
                                 <input type="text" id="valCategoria" required>
                             </div>
-
                             <button type="submit" class="btn btn-success" id="btnConfirmar">Confirmar y Guardar en Sistema</button>
                         </form>
                         
@@ -214,7 +238,6 @@
                 </div>
             </div>
 
-            <div id="view-ver-facturas" class="view-panel"><div class="placeholder-view"><h3>Módulo: Ver Facturas</h3><p>Módulo en desarrollo para el Libro de Compras.</p></div></div>
             <div id="view-buscar-factura" class="view-panel">
                 <div class="container-box" style="max-width: 900px;">
                     <h2>Consulta y Auditoría de Documentos Digitales</h2>
@@ -231,7 +254,6 @@
                     </div>
 
                     <div style="display: flex; gap: 20px; min-height: 350px;">
-                        
                         <div style="flex: 1; border: 1px solid var(--border); border-radius: 8px; background: #ffffff; overflow: hidden;">
                             <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;" id="tablaFacturas">
                                 <thead style="background: #f8fafc; border-bottom: 2px solid var(--border); color: #475569;">
@@ -263,20 +285,20 @@
                                 <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 8px;">Haz clic sobre la imagen para abrirla en tamaño completo.</p>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
+
             <div id="view-editar-factura" class="view-panel"><div class="placeholder-view"><h3>Módulo: Editar Factura</h3><p>Modificación manual de datos fiscales.</p></div></div>
             <div id="view-categoria-gastos" class="view-panel"><div class="placeholder-view"><h3>Módulo: Categoría de Gastos</h3><p>Clasificación del NLP Manager.</p></div></div>
-            <div id="view-generar-retencion" class="view-panel"><div class="placeholder-view"><h3>Módulo: Generar Retención</h3><p>Cálculos de retención del IVA.</p></div></div>
+            <div id="view-comprobante-retencion" class="view-panel"><div class="placeholder-view"><h3>Módulo: Buscar Comprobante de Retención</h3><p>Cálculos de retención del IVA.</p></div></div>
+            
             <div id="view-ver-proveedores" class="view-panel">
                 <div class="container-box" style="max-width: 950px;">
                     <h2>Directorio de Proveedores Registrados</h2>
                     <p class="description">Visualiza y actualiza la información fiscal y de contacto de tus proveedores para el Libro de Compras.</p>
 
                     <div style="display: flex; gap: 25px; align-items: flex-start;">
-                        
                         <div style="flex: 1.3; border: 1px solid var(--border); border-radius: 8px; background: #ffffff; overflow: hidden;">
                             <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;" id="tablaProveedores">
                                 <thead style="background: #f8fafc; border-bottom: 2px solid var(--border); color: #475569;">
@@ -289,9 +311,7 @@
                                 </thead>
                                 <tbody id="listaProveedoresCuerpo">
                                     <tr>
-                                        <td colspan="4" style="padding: 30px; text-align: center; color: var(--text-muted);">
-                                            Cargando proveedores...
-                                        </td>
+                                        <td colspan="4" style="padding: 30px; text-align: center; color: var(--text-muted);">Cargando proveedores...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -307,40 +327,36 @@
 
                             <form id="formEdicionProveedor" style="display: none; flex-direction: column; gap: 12px;">
                                 <input type="hidden" id="editProvId">
-                                
                                 <div class="form-group">
                                     <label>Razón Social:</label>
                                     <input type="text" id="editProvRazon" data-campo="razon_social" required>
                                 </div>
-
                                 <div class="form-group">
                                     <label>Dirección Fiscal:</label>
                                     <input type="text" id="editProvDireccion" data-campo="direccion" required>
                                 </div>
-
                                 <div class="form-group">
                                     <label>Teléfono:</label>
                                     <input type="text" id="editProvTelefono" data-campo="telefono" placeholder="Opcional">
                                 </div>
-
                                 <div class="form-group">
                                     <label>Tipo de Contribuyente:</label>
-                                    <select id="editProvContribuyente" data-campo="tipo_contribuyente" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background-color: #fff; color: #0f172a;">
+                                    <select id="editProvContribuyente" data-campo="tipo_contribuyente">
                                         <option value="">Seleccione una opción</option>
                                         <option value="Ordinario">Ordinario</option>
                                         <option value="Especial">Especial</option>
                                     </select>
                                 </div>
-
-                                <p style="font-size: 11px; color: var(--warning); font-weight: 500;">Los cambios se aplicarán de forma inmediata campo por campo al presionar actualizar.</p>
+                                <p style="font-size: 11px; color: var(--warning); font-weight: 500;">Los cambios se aplicarán al presionar actualizar.</p>
                                 <button type="submit" class="btn" style="background: var(--primary); padding: 10px;">Guardar Cambios</button>
                             </form>
                         </div>
-
                     </div>
                 </div>
             </div>
+
             <div id="view-generar-reporte" class="view-panel"><div class="placeholder-view"><h3>Módulo: Generar Reporte</h3><p>Exportación de archivos consolidados.</p></div></div>
+            
             <div id="view-ver-historial" class="view-panel">
                 <div class="container-box" style="max-width: 1000px;">
                     <h2>Historial de Cambios y Auditoría del Sistema</h2>
@@ -359,12 +375,15 @@
                                 </tr>
                             </thead>
                             <tbody id="tablaHistorialCuerpo">
-                                </tbody>
+                                <tr>
+                                    <td colspan="6" style="padding: 20px; text-align: center; color: var(--text-muted);">No hay registros de historial actualmente.</td>
+                                </tr>
+                            </tbody>
                         </table>
                     </div>
 
                     <div style="display: flex; justify-content: space-between; align-items: center; background: #f1f5f9; padding: 10px 20px; border-radius: 6px;">
-                        <span id="infoPaginacion" style="font-size: 13px; color: #475569;">Cargando información de páginas...</span>
+                        <span id="infoPaginacion" style="font-size: 13px; color: #475569;">Página 1 de 1</span>
                         <div style="display: flex; gap: 10px;">
                             <button type="button" class="btn" id="btnPrevHistorial" style="width: auto; padding: 6px 15px; background: #64748b;">⬅️ Anterior</button>
                             <button type="button" class="btn" id="btnNextHistorial" style="width: auto; padding: 6px 15px;">Siguiente ➡️</button>
@@ -372,13 +391,13 @@
                     </div>
                 </div>
             </div>
+
             <div id="view-usuarios" class="view-panel">
                 <div class="container-box" style="max-width: 1100px;">
                     <h2>Control de Accesos y Usuarios del Sistema</h2>
                     <p class="description">Administra el personal operativo del SGAF, gestiona credenciales de acceso y controla los estados de actividad.</p>
 
                     <div style="display: flex; gap: 25px; align-items: flex-start;">
-                        
                         <div style="flex: 1.2; border: 1px solid var(--border); border-radius: 8px; background: #ffffff; overflow: hidden;">
                             <div style="padding: 15px; background: #f8fafc; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
                                 <span style="font-weight: 600; font-size: 14px; color: #334155;">Operadores Registrados</span>
@@ -413,44 +432,40 @@
                                     <label>Nombre de Usuario (Login):</label>
                                     <input type="text" id="userFormUsername" required placeholder="Ej: aarias">
                                 </div>
-
                                 <div class="form-group">
                                     <label>Nombre Completo:</label>
                                     <input type="text" id="userFormNombre" required placeholder="Ej: Andrés Arias">
                                 </div>
-
                                 <div class="form-group">
                                     <label>Correo Electrónico:</label>
                                     <input type="email" id="userFormCorreo" required placeholder="ejemplo@elfaro.com">
                                 </div>
-
                                 <div class="form-group" id="groupFormPassword">
                                     <label id="labelFormPassword">Contraseña de Acceso:</label>
                                     <input type="password" id="userFormPassword" required minlength="6">
                                     <small id="helpFormPassword" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display:none;">Rellena este campo solo si deseas resetear su clave.</small>
                                 </div>
-
                                 <div class="form-group" id="groupFormRol">
                                     <label>Rol del Usuario:</label>
-                                    <select id="userFormRol" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background: #fff;">
-                                        <option value="">Seleccione un rol</option>
-                                        <option value="empleado">Empleado</option>
-                                        <option value="admin" id="optRolAdmin">Administrador</option>
+                                    <select id="userFormRol" required>
+                                        <option value="">Seleccione un Rol</option>
+                                        <option value="Administrador">Administrador / CTO</option>
+                                        <option value="Auditor">Auditor Fiscal</option>
+                                        <option value="Operador">Operador de Carga</option>
                                     </select>
                                 </div>
-
-                                <button type="submit" class="btn" id="btnSubmitUsuario" style="margin-top: 10px;">Crear Usuario</button>
-                                <button type="button" class="btn" id="btnCancelarEdicion" style="background: #64748b; margin-top: -5px; display: none;">Cancelar</button>
+                                <button type="submit" class="btn" style="margin-top: 10px;">Guardar Usuario</button>
                             </form>
                         </div>
-
                     </div>
                 </div>
             </div>
 
+            <div id="view-perfil" class="view-panel"><div class="placeholder-view"><h3>Módulo: Perfil de Empresa</h3><p>Ajustes de datos fiscales corporativos (RIF, Nombre base).</p></div></div>
+
         </div>
     </div>
 
-    <script src="./js/main.js"></script>
+    <script type="module" src="./js/main.js"></script>
 </body>
 </html>
