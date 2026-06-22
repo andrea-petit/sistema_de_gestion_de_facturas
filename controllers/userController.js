@@ -175,6 +175,21 @@ const userController= {
             console.error('Error logging in user:', error);
             res.status(500).json({ ok: false, msg: 'Error logging in user.' });
         }
+    },
+
+    async logoutUser(req, res) {
+        if (req && req.session) {
+            req.session.destroy(err => {
+                if (err) {
+                    console.error("Error destroying session during logout:", err);
+                    return res.status(500).json({ ok: false, msg: 'Error logging out.' });
+                }
+                res.clearCookie('connect.sid'); // Limpia la cookie de sesión
+                res.status(200).json({ ok: true, msg: 'Logged out successfully.' });
+            });
+        } else {
+            res.status(400).json({ ok: false, msg: 'No active session found.' });
+        }
     }
 
 };
