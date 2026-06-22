@@ -1,0 +1,24 @@
+/* Estilos específicos del módulo Subir Facturas */
+/* Mover aquí reglas relacionadas con #view-subir-facturas cuando corresponda */
+
+.calc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px;
+  background: #f1f5f9;
+  border-radius: 6px;
+}
+.retention-amount {
+  background: #e2e8f0;
+  font-weight: bold;
+  color: #b91c1c;
+}
+.check-servicio {
+  grid-column: span 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+}

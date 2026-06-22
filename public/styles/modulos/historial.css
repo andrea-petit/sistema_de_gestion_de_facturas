@@ -1,0 +1,58 @@
+/* Estilos específicos del módulo Historial */
+#view-ver-historial table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+.row-border {
+  border-bottom: 1px solid var(--border);
+}
+.td-history {
+  padding: 10px 15px;
+}
+.badge-action {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  color: white;
+}
+.container-box--large {
+  max-width: 1000px;
+}
+.panel-list-historial {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.th-cell {
+  padding: 12px 15px;
+}
+
+.historial-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f1f5f9;
+  padding: 10px 20px;
+  border-radius: 6px;
+}
+.info-pag {
+  font-size: 13px;
+  color: #475569;
+  font-family: var(--font-body);
+}
+.historial-buttons {
+  display: flex;
+  gap: 10px;
+}
+.btn-prev {
+  padding: 6px 15px;
+  background: #64748b;
+}
+.btn-next {
+  padding: 6px 15px;
+}

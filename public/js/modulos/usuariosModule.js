@@ -16,6 +16,7 @@ export function initUsuariosModulo() {
     }
 
     cargarUsuariosTabla(operadorRol);
+    ocultarPanelUsuario();
 
     const formGestion = document.getElementById('formGestionUsuario');
     if (formGestion) {
@@ -33,16 +34,34 @@ export function initUsuariosModulo() {
     const btnCancelarEdicion = document.getElementById('btnCancelarEdicion');
 
     if (btnModoRegistro) {
-        btnModoRegistro.onclick = () => setFormModo('REGISTRO', null, operadorRol);
+        btnModoRegistro.onclick = () => {
+            mostrarPanelUsuario();
+            setFormModo('REGISTRO', null, operadorRol);
+        };
     }
     if (btnCancelarEdicion) {
-        btnCancelarEdicion.onclick = () => setFormModo('REGISTRO', null, operadorRol);
+        btnCancelarEdicion.onclick = () => {
+            setFormModo('REGISTRO', null, operadorRol);
+            ocultarPanelUsuario();
+        };
     }
 }
+
+function mostrarPanelUsuario() {
+    const panel = document.getElementById('panelFormUsuario');
+    if (panel) panel.classList.remove('hidden');
+}
+
+function ocultarPanelUsuario() {
+    const panel = document.getElementById('panelFormUsuario');
+    if (panel) panel.classList.add('hidden');
+}
+
 
 export function setFormModo(modo, usuarioData = null, operadorRol = 'admin') {
     modoFormUsuario = modo;
     const form = document.getElementById('formGestionUsuario');
+    const panel = document.getElementById('panelFormUsuario');
     const titulo = document.getElementById('formUsuarioTitulo');
     const desc = document.getElementById('formUsuarioDescripcion');
     const btnSubmit = document.getElementById('btnSubmitUsuario');
@@ -53,6 +72,7 @@ export function setFormModo(modo, usuarioData = null, operadorRol = 'admin') {
     const inputPass = document.getElementById('userFormPassword');
 
     if (!form) return;
+    if (panel) panel.classList.remove('hidden');
     form.reset();
 
     const colorPrimario = "var(--primary, #2563eb)";
@@ -63,12 +83,13 @@ export function setFormModo(modo, usuarioData = null, operadorRol = 'admin') {
         if (desc) desc.innerText = "Completa los datos para asignar credenciales de acceso al sistema.";
         if (btnSubmit) {
             btnSubmit.innerText = "Crear Usuario";
-            btnSubmit.style.backgroundColor = colorPrimario;
+            btnSubmit.classList.remove('btn-warning');
+            btnSubmit.classList.add('btn-primary');
         }
-        if (btnCancelar) btnCancelar.style.display = 'none';
-        if (groupRol) groupRol.style.display = 'flex';
+        if (btnCancelar) btnCancelar.classList.remove('hidden');
+        if (groupRol) groupRol.classList.remove('hidden');
         if (labelPass) labelPass.innerText = "Contraseña de Acceso:";
-        if (helpPass) helpPass.style.display = 'none';
+        if (helpPass) helpPass.classList.add('help-hidden');
         if (inputPass) inputPass.required = true;
 
         const inputUser = document.getElementById('userFormUsername');
@@ -78,12 +99,13 @@ export function setFormModo(modo, usuarioData = null, operadorRol = 'admin') {
         if (desc) desc.innerText = "Modifica los campos del operador. El rol no puede alterarse.";
         if (btnSubmit) {
             btnSubmit.innerText = "Guardar Cambios";
-            btnSubmit.style.backgroundColor = colorAdvertencia;
+            btnSubmit.classList.remove('btn-primary');
+            btnSubmit.classList.add('btn-warning');
         }
-        if (btnCancelar) btnCancelar.style.display = 'block';
-        if (groupRol) groupRol.style.display = 'none';
+        if (btnCancelar) btnCancelar.classList.remove('hidden');
+        if (groupRol) groupRol.classList.add('hidden');
         if (labelPass) labelPass.innerText = "Resetear Contraseña (Opcional):";
-        if (helpPass) helpPass.style.display = 'block';
+        if (helpPass) helpPass.classList.remove('help-hidden');
         if (inputPass) inputPass.required = false;
 
         const inputId = document.getElementById('userFormId');
@@ -124,19 +146,19 @@ export async function cargarUsuariosTabla(operadorRol) {
 
         usuarios.forEach(user => {
             const tr = document.createElement('tr');
-            tr.style.borderBottom = '1px solid var(--border, #e2e8f0)';
+            tr.classList.add('row-border');
             
             const estaActivo = user.activo !== false;
             const badgeEstado = estaActivo
-                ? `<span style="background: #dcfce7; color: #16a34a; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 11px;">Activo</span>`
-                : `<span style="background: #fee2e2; color: #ef4444; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 11px;">Inactivo</span>`;
+                ? `<span class="badge-active">Activo</span>`
+                : `<span class="badge-inactive">Inactivo</span>`;
 
             tr.innerHTML = `
-                <td style="padding: 12px 10px; font-weight: 600; color: #0f172a;">@${user.nombre_usuario || 'S/U'}</td>
-                <td style="padding: 12px 10px; color: #334155;">${user.nombre_completo || 'Sin Nombre'}</td>
-                <td style="padding: 12px 10px;"><span style="text-transform: capitalize; font-size: 12px; color: #475569; font-weight: 500;">${user.rol || 'Sin Rol'}</span></td>
-                <td style="padding: 12px 10px;">${badgeEstado}</td>
-                <td style="padding: 12px 10px; text-align: right;" class="acciones-zona"></td>
+                <td class="td-username">@${user.nombre_usuario || 'S/U'}</td>
+                <td class="td-normal">${user.nombre_completo || 'Sin Nombre'}</td>
+                <td class="td-role"><span style="text-transform: capitalize; font-size: 12px; color: #475569; font-weight: 500;">${user.rol || 'Sin Rol'}</span></td>
+                <td>${badgeEstado}</td>
+                <td class="td-actions acciones-zona"></td>
             `;
 
             const zonaAcciones = tr.querySelector('.acciones-zona');
@@ -144,13 +166,13 @@ export async function cargarUsuariosTabla(operadorRol) {
                 if (zonaAcciones) zonaAcciones.innerHTML = `<span style="color: ${colorMuted}; font-size: 12px; font-style: italic;">Protegido</span>`;
             } else {
                 const btnEdit = document.createElement('button');
-                btnEdit.innerText = "✏️";
-                btnEdit.style = "background: none; border: none; cursor: pointer; margin-right: 10px; font-size: 13px;";
+                btnEdit.innerText = "Editar";
+                btnEdit.classList.add('action-btn');
                 btnEdit.onclick = () => setFormModo('EDICION', user, operadorRol);
 
                 const btnInactivar = document.createElement('button');
-                btnInactivar.innerText = estaActivo ? "❌" : "✅";
-                btnInactivar.style = "background: none; border: none; cursor: pointer; font-size: 13px;";
+                btnInactivar.innerText = estaActivo ? "Inactivar" : "Activar";
+                btnInactivar.classList.add('action-btn');
                 btnInactivar.onclick = () => alternarEstadoUsuario(user.id, user.nombre_usuario, operadorRol);
 
                 if (zonaAcciones) {
@@ -164,7 +186,7 @@ export async function cargarUsuariosTabla(operadorRol) {
 
     } catch (err) {
         console.error("[SGAF Render Usuarios Error]:", err);
-        cuerpo.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: #ef4444;">❌ Error al procesar usuarios: ${err.message}</td></tr>`;
+        cuerpo.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: #ef4444;">Error al procesar usuarios: ${err.message}</td></tr>`;
     }
 }
 
@@ -191,8 +213,15 @@ export async function procesarFormularioUsuario(operadorRol) {
             const resJson = await res.json();
             if (!res.ok) throw new Error(resJson.msg || 'Error en el servidor al registrar.');
 
-            alert('¡Usuario guardado con éxito!');
+            await Swal.fire({
+                icon: 'success',
+                title: '¡Usuario guardado!',
+                text: 'El usuario se registró correctamente.',
+                timer: 2200,
+                showConfirmButton: false
+            });
             setFormModo('REGISTRO', null, operadorRol);
+            ocultarPanelUsuario();
             await cargarUsuariosTabla(operadorRol);
 
         } else {
@@ -219,28 +248,57 @@ export async function procesarFormularioUsuario(operadorRol) {
                     throw new Error(errorJson.msg || 'Fallo al actualizar campos.');
                 }
             }
-            alert('¡Información de usuario modificada con éxito!');
+            await Swal.fire({
+                icon: 'success',
+                title: '¡Información guardada!',
+                text: 'Los cambios se aplicaron correctamente.',
+                timer: 2200,
+                showConfirmButton: false
+            });
             setFormModo('REGISTRO', null, operadorRol);
+            ocultarPanelUsuario();
             await cargarUsuariosTabla(operadorRol);
         }
     } catch (err) {
-        alert(`Error: ${err.message}`);
+        await Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: err.message
+        });
     } finally {
         if (btnSubmit) btnSubmit.disabled = false;
     }
 }
 
 export async function alternarEstadoUsuario(id, username, operadorRol) {
-    if (!confirm(`¿Deseas cambiar el estado de actividad de @${username}?`)) return;
+    const confirmCambio = await Swal.fire({
+        title: `¿Deseas cambiar el estado de actividad de @${username}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, cambiar',
+        cancelButtonText: 'No, cancelar',
+        reverseButtons: true
+    });
+    if (!confirmCambio.isConfirmed) return;
 
     try {
         const res = await fetch(`/api/users/${id}`, { method: 'DELETE', credentials: 'include' });
         const data = await res.json();
         if (!res.ok) throw new Error(data.msg || 'No se pudo procesar la solicitud.');
 
-        alert(`Estado de @${username} modificado.`);
+        await Swal.fire({
+            icon: 'success',
+            title: 'Estado modificado',
+            text: `El estado de @${username} ha sido actualizado.`,
+            timer: 2200,
+            showConfirmButton: false
+        });
         await cargarUsuariosTabla(operadorRol);
     } catch (err) {
-        alert(`Error: ${err.message}`);
+        await Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: err.message
+        });
     }
 }

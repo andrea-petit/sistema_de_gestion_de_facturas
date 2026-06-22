@@ -44,18 +44,32 @@ export function initProveedoresModulo() {
             }
 
             if (actualizacionesExitosas > 0) {
-                alert("¡Proveedor actualizado correctamente!");
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Proveedor actualizado',
+                    text: 'Los datos del proveedor se guardaron correctamente.',
+                    timer: 2200,
+                    showConfirmButton: false
+                });
                 await cargarProveedores();
                 document.getElementById('editorPlaceholder').style.display = 'block';
                 formEdicion.style.display = 'none';
                 formEdicion.reset();
             } else {
-                alert("No se realizaron modificaciones en el proveedor.");
+                await Swal.fire({
+                    icon: 'info',
+                    title: 'Sin cambios',
+                    text: 'No se realizaron modificaciones en el proveedor.'
+                });
             }
 
         } catch (error) {
             console.error("[SGAF Error Proveedores]:", error);
-            alert("Error de conexión al intentar actualizar el proveedor.");
+            await Swal.fire({
+                icon: 'error',
+                title: 'Error de conexión',
+                text: 'No se pudo actualizar el proveedor. Intenta de nuevo.'
+            });
         } finally {
             if (btnSubmit) {
                 btnSubmit.disabled = false;

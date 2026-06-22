@@ -13,7 +13,11 @@ export function initBuscarModulo() {
         const fechaSeleccionada = searchFecha.value;
 
         if (!fechaSeleccionada) {
-            alert("Por favor, selecciona una fecha válida para la consulta.");
+            await Swal.fire({
+                icon: 'warning',
+                title: 'Fecha inválida',
+                text: 'Por favor, selecciona una fecha válida para la consulta.'
+            });
             return;
         }
 
@@ -23,8 +27,8 @@ export function initBuscarModulo() {
 
         btnBuscar.disabled = true;
         listaCuerpo.innerHTML = `<tr><td colspan="3" style="padding: 20px; text-align: center; color: var(--primary);"> Buscando comprobantes...</td></tr>`;
-        visorContenido.style.display = 'none';
-        visorPlaceholder.style.display = 'block';
+        visorContenido.classList.add('hidden');
+        visorPlaceholder.classList.remove('hidden');
 
         try {
             const response = await fetch(`/api/facturas?fecha=${fechaFormateada}`, {
@@ -50,8 +54,7 @@ export function initBuscarModulo() {
 
             facturas.forEach(factura => {
                 const tr = document.createElement('tr');
-                tr.style.borderBottom = '1px solid var(--border)';
-                tr.style.transition = 'background 0.2s';
+                tr.classList.add('row-border', 'row-transition');
                 
                 const proveedorNombre = factura.proveedores?.razon_social || factura.proveedor_nombre || 'Desconocido';
                 const numeroFactura = factura.numero_factura;
@@ -68,20 +71,24 @@ export function initBuscarModulo() {
                 `;
 
                 const btnAuditar = tr.querySelector('.btn-auditar');
-                btnAuditar.addEventListener('click', () => {
-                    document.querySelectorAll('#listaFacturasCuerpo tr').forEach(r => r.style.background = 'transparent');
-                    tr.style.background = '#eff6ff';
+                btnAuditar.addEventListener('click', async () => {
+                    document.querySelectorAll('#listaFacturasCuerpo tr').forEach(r => r.classList.remove('selected-row'));
+                    tr.classList.add('selected-row');
 
                     if (!urlDigital) {
-                        alert("Este registro no cuenta con una imagen de respaldo digital en Cloudinary.");
+                        await Swal.fire({
+                            icon: 'info',
+                            title: 'Sin imagen digitalizada',
+                            text: 'Este registro no cuenta con una imagen de respaldo digital en Cloudinary.'
+                        });
                         return;
                     }
 
                     visorTitulo.innerText = `Factura: ${numeroFactura} - ${proveedorNombre}`;
                     imgFacturaDigital.src = urlDigital;
                     
-                    visorPlaceholder.style.display = 'none';
-                    visorContenido.style.display = 'block';
+                    visorPlaceholder.classList.add('hidden');
+                    visorContenido.classList.remove('hidden');
                 });
 
                 listaCuerpo.appendChild(tr);

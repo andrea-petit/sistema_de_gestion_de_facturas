@@ -5,7 +5,7 @@ const errorDiv = document.getElementById("caja-error");
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  errorDiv.style.display = "none";
+  errorDiv.classList.add("hidden");
 
   const nombre_usuario = document.getElementById("usuario").value;
   const contraseña = document.getElementById("clave").value;
@@ -32,7 +32,7 @@ form.addEventListener("submit", async (e) => {
       }
 
       // Ocultar el formulario mientras mostramos la notificación
-      vistaLogin.style.display = "none";
+      vistaLogin.classList.add("hidden");
 
       // Mostrar SweetAlert y redirigir al dashboard
       if (typeof Swal !== 'undefined') {
@@ -52,11 +52,11 @@ form.addEventListener("submit", async (e) => {
       }
     } else {
       errorDiv.innerText = datos.msg;
-      errorDiv.style.display = "block";
+      errorDiv.classList.remove("hidden");
     }
   } catch (error) {
     errorDiv.innerText =
       'Error: Asegúrate de correr "node app.js" en la terminal.';
-    errorDiv.style.display = "block";
+    errorDiv.classList.remove("hidden");
   }
 });

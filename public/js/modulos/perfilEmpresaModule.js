@@ -14,21 +14,21 @@ export function initPerfilModulo() {
 
     // --- Control de Permisos Inicial ---
     if (operadorRol === 'superadmin') {
-        if (btnGuardar) btnGuardar.style.display = 'block';
+        if (btnGuardar) btnGuardar.classList.remove('hidden');
         if (alertaPermiso) {
             alertaPermiso.innerText = "Modo de configuración activo";
-            alertaPermiso.style.background = "#dcfce7";
-            alertaPermiso.style.color = "#166534";
-            alertaPermiso.style.display = "block";
+            alertaPermiso.classList.remove('hidden');
+            alertaPermiso.classList.remove('alert-error');
+            alertaPermiso.classList.add('alert-success');
         }
         inputsPerfil.forEach(input => input.removeAttribute('disabled'));
     } else {
-        if (btnGuardar) btnGuardar.style.display = 'none';
+        if (btnGuardar) btnGuardar.classList.add('hidden');
         if (alertaPermiso) {
             alertaPermiso.innerText = "Vista Protegida (Modo Lectura)";
-            alertaPermiso.style.background = "#fee2e2";
-            alertaPermiso.style.color = "#991b1b";
-            alertaPermiso.style.display = "block";
+            alertaPermiso.classList.remove('hidden');
+            alertaPermiso.classList.remove('alert-success');
+            alertaPermiso.classList.add('alert-error');
         }
         inputsPerfil.forEach(input => input.setAttribute('disabled', 'true'));
     }
@@ -38,9 +38,9 @@ export function initPerfilModulo() {
         if (btnRegistrarEmpresa) {
             // Regla estricta: Solo visible si es superadmin Y NO existe empresa
             if (operadorRol === 'superadmin' && !empresaExiste) {
-                btnRegistrarEmpresa.style.display = 'block';
+                btnRegistrarEmpresa.classList.add('visible');
             } else {
-                btnRegistrarEmpresa.style.display = 'none';
+                btnRegistrarEmpresa.classList.remove('visible');
             }
         }
     }
@@ -104,14 +104,28 @@ export function initPerfilModulo() {
                     const resJson = await res.json();
 
                     if (resJson.ok) {
-                        alert("¡Felicidades! Empresa registrada y directrices fiscales del SENIAT inicializadas.");
+                        await Swal.fire({
+                            icon: 'success',
+                            title: 'Empresa registrada',
+                            text: 'Empresa registrada y directrices fiscales inicializadas exitosamente.',
+                            timer: 2200,
+                            showConfirmButton: false
+                        });
                         await obtenerDatosEmpresa(); // Esto cambiará empresaExiste a true y ocultará el botón
                     } else {
-                        alert(`Error al registrar empresa: ${resJson.error || 'Verifica los datos.'}`);
+                        await Swal.fire({
+                            icon: 'error',
+                            title: 'Error al registrar empresa',
+                            text: resJson.error || 'Verifica los datos.'
+                        });
                     }
                 } catch (err) {
                     console.error("Error en creación de empresa:", err);
-                    alert("Error de conexión al intentar registrar la empresa.");
+                    await Swal.fire({
+                        icon: 'error',
+                        title: 'Error de conexión',
+                        text: 'No se pudo registrar la empresa. Intenta nuevamente.'
+                    });
                 }
             } 
             // CASO B: Si YA existe la empresa, conservamos tu lógica secuencial de edición (PUT)
@@ -145,10 +159,20 @@ export function initPerfilModulo() {
                 }
 
                 if (errores === 0) {
-                    alert("¡Perfil de la empresa y directrices del SENIAT actualizadas con éxito!");
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Perfil actualizado',
+                        text: 'El perfil de la empresa se guardó correctamente.',
+                        timer: 2200,
+                        showConfirmButton: false
+                    });
                     obtenerDatosEmpresa();
                 } else {
-                    alert("Hubo inconvenientes al guardar algunas especificaciones del perfil.");
+                    await Swal.fire({
+                        icon: 'error',
+                        title: 'Error al guardar',
+                        text: 'Hubo inconvenientes al guardar algunas especificaciones del perfil.'
+                    });
                 }
             }
         };
@@ -157,16 +181,30 @@ export function initPerfilModulo() {
     // --- Flujo de Cierre de Sesión ---
     if (btnLogout) {
         btnLogout.onclick = async () => {
-            if (confirm("¿Estás seguro de que deseas salir del SGAF?")) {
-                try {
-                    await fetch('/api/users/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
-                    sessionStorage.clear();
-                    localStorage.removeItem('userRol'); // Asegura limpiar ambos almacenes
-                    alert("Sesión finalizada correctamente.");
-                    window.location.replace('/'); // Redirige al login sin posibilidad de volver atrás
-                } catch (err) {
-                    console.error("Error en flujo de logout:", err);
-                }
+            const confirmLogout = await Swal.fire({
+                title: '¿Estás seguro de que deseas salir del SGAF?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, salir',
+                cancelButtonText: 'No, permanecer',
+                reverseButtons: true
+            });
+            if (!confirmLogout.isConfirmed) return;
+
+            try {
+                await fetch('/api/users/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+                sessionStorage.clear();
+                localStorage.removeItem('userRol'); // Asegura limpiar ambos almacenes
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Sesión finalizada',
+                    text: 'La sesión se cerró correctamente.',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                window.location.replace('/'); // Redirige al login sin posibilidad de volver atrás
+            } catch (err) {
+                console.error("Error en flujo de logout:", err);
             }
         };
     }

@@ -122,10 +122,18 @@ export async function initUploadForm() {
                     verificarCalidadDatos();
                     resultSection.style.display = 'block';
                 } else {
-                    alert(`Error: ${resultado.error}`);
+                    await Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: resultado.error || 'Ocurrió un problema al procesar la factura.'
+                    });
                 }
             } catch (error) {
-                alert('Error de conexión con el servidor.');
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Error de conexión',
+                    text: 'No se pudo conectar con el servidor.'
+                });
             } finally {
                 btnSubmit.disabled = false;
                 loadingText.style.display = 'none';
@@ -211,16 +219,30 @@ export async function initUploadForm() {
                 const resGuardar = await response.json();
 
                 if (response.ok) {
-                    alert("¡Factura e Impuestos auditados con éxito!");
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Factura guardada',
+                        text: 'La factura y los impuestos se auditaron correctamente.',
+                        timer: 2200,
+                        showConfirmButton: false
+                    });
                     verificationForm.reset();
                     uploadForm.reset();
                     uploadLabel.innerText = "Haz clic para seleccionar la imagen de la factura";
                     resultSection.style.display = 'none';
                 } else {
-                    alert(`Error al guardar: ${resGuardar.error}`);
+                    await Swal.fire({
+                        icon: 'error',
+                        title: 'Error al guardar',
+                        text: resGuardar.error || 'Ocurrió un error al guardar la factura.'
+                    });
                 }
             } catch (err) {
-                alert("Error de conexión al intentar registrar la factura.");
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Error de conexión',
+                    text: 'No se pudo registrar la factura. Intenta de nuevo.'
+                });
             }
         });
     }
