@@ -11,6 +11,9 @@
     <link rel="stylesheet" href="styles/modulos/historial.css">
     <link rel="stylesheet" href="styles/modulos/usuarios.css">
     <link rel="stylesheet" href="styles/modulos/perfil.css">
+    <link rel="stylesheet" href="styles/modulos/categorias.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </head>
 <body>
 
@@ -64,15 +67,20 @@
 
                 <div class="sidebar-footer">
                 <button id="btnRegistrarEmpresa" class="btn-sidebar-company" onclick="switchView('perfil', this)">
-                    🏢 Registrar Empresa
+                    Registrar Empresa
                 </button>
 
-                <div class="sidebar-user-row">
-                        <div class="sidebar-user-info">
-                        <div class="user-avatar" id="userAvatar">SA</div>
-                        <span id="lblUsername" class="fw-500">Superadmin</span>
+                <div class="sidebar-user-footer">
+                    <div class="user-avatar">
+                        <span id="userInitials">U</span>
                     </div>
-                    <button class="btn-logout" id="btnLogout" onclick="handleLogout()">Salir</button>
+                    <div class="user-info">
+                        <span id="sidebarUserName" class="user-name">Cargando...</span>
+                        <small id="sidebarUserRole" class="user-role">Rol</small>
+                    </div>
+                    <button id="btnLogout" title="Cerrar Sesión" onclick="handleLogout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </div>
                 </div>
             </div>
         </div>
@@ -233,7 +241,61 @@
             </div>
 
             <div id="view-editar-factura" class="view-panel"><div class="placeholder-view"><h3>Módulo: Editar Factura</h3><p>Modificación manual de datos fiscales.</p></div></div>
-            <div id="view-categoria-gastos" class="view-panel"><div class="placeholder-view"><h3>Módulo: Categoría de Gastos</h3><p>Clasificación del NLP Manager.</p></div></div>
+            
+            <div id="view-categoria-gastos" class="view-panel">
+                <div class="panel-header">
+                    <h2>Analítica de Gastos por Categorías</h2>
+                    <p>Visualización del impacto financiero y desglose de facturas en Bolívares (BS).</p>
+                </div>
+
+                <div class="categorias-analytics-container">
+                    
+                    <div class="analytics-chart-box">
+                        <h3>Distribución Porcentual del Gasto</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="chartCategoriasTorta"></canvas>
+                        </div>
+                        <div class="chart-total-indicador">
+                            <strong>Total General:</strong> <span id="txtGranTotalCategorias">0.00</span> BS
+                        </div>
+                    </div>
+
+                    <div class="analytics-cards-box">
+                        <h3>Totales Acumulados</h3>
+                        <div id="gridRecuadrosCategorias" class="categorias-cards-grid">
+                            <p class="loading-text">Cargando métricas financieras...</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div id="modalDesgloseCategoria" class="modal-sys hidden">
+                    <div class="modal-sys-content table-modal">
+                        <div class="modal-sys-header">
+                            <h3 id="modalCategoriaTitulo">Gastos Detallados</h3>
+                            <button id="btnCerrarModalCategorias" class="close-modal-btn">&times;</button>
+                        </div>
+                        <div class="modal-sys-body">
+                            <div class="table-responsive">
+                                <table class="table-system">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha Emisión</th>
+                                            <th>N° Factura</th>
+                                            <th>Proveedor / Razón Social</th>
+                                            <th class="text-right">Monto (BS)</th>
+                                            <th>Estatus</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyDetalleGastos">
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div id="view-comprobante-retencion" class="view-panel"><div class="placeholder-view"><h3>Módulo: Buscar Comprobante de Retención</h3><p>Cálculos de retención del IVA.</p></div></div>
             
             <div id="view-ver-proveedores" class="view-panel">

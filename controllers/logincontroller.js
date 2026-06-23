@@ -29,10 +29,12 @@ const ingresarUsuario = async (req, res) => {
         if (req && req.session) {
             req.session.user = {
                 id: usuarioDB.id,
-                nombre: usuarioDB.nombre_usuario
+                nombre: usuarioDB.nombre_usuario,
+                nombre_completo: usuarioDB.nombre_completo
             };
             req.session.userId = usuarioDB.id;
             req.session.userNombre = usuarioDB.nombre_usuario;
+            req.session.userCompleto= usuarioDB.nombre_completo
         }
 
         return res.status(200).json({
