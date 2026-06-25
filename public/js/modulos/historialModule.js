@@ -39,7 +39,7 @@ async function cargarHistorial(page) {
 
     if (!cuerpo) return;
 
-    cuerpo.innerHTML = `<tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--primary);">⏳ Cargando bitácora de auditoría...</td></tr>`;
+    cuerpo.innerHTML = `<tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--primary);">Cargando registros de historial...</td></tr>`;
 
     try {
         const response = await fetch(`/api/historial?page=${page}&limit=${limitePorPaginaHistorial}`, {

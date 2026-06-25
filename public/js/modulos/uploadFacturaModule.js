@@ -25,7 +25,7 @@ export async function initUploadForm() {
         const resEmpresaJson = await resEmpresa.json();
         if (resEmpresaJson.ok && resEmpresaJson.data) {
             configFiscalEmpresa = resEmpresaJson.data;
-            console.log("[SGAF Fiscal] Perfil detectado:", configFiscalEmpresa.tipo_contribuyente);
+            // console.log("[SGAF Fiscal] Perfil detectado:", configFiscalEmpresa.tipo_contribuyente);
         }
     } catch (err) {
         console.error("No se pudo pre-cargar el perfil de empresa:", err);

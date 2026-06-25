@@ -1,25 +1,39 @@
 // Variable global para almacenar y destruir la instancia de la gráfica si se recarga la vista
 let instanciaGraficaTorta = null;
 
-export async function initCategoriasModulo() {
+export async function initCategoriasModulo(forzarRefresco = false) {
+    console.log(`[SGAF - Categorías] Inicializando módulo analítico. Forzar Refresco: ${forzarRefresco}`);
+
     const gridRecuadros = document.getElementById('gridRecuadrosCategorias');
     const txtGranTotal = document.getElementById('txtGranTotalCategorias');
     const modalDesglose = document.getElementById('modalDesgloseCategoria');
     const btnCerrarModal = document.getElementById('btnCerrarModalCategorias');
 
+    if (!gridRecuadros) {
+        console.warn("[SGAF - Categorías] No se localizó el contenedor 'gridRecuadrosCategorias' en el DOM.");
+        return;
+    }
+
     // --- Función Principal: Cargar Resumen de la Vista ---
     async function cargarAnaliticaCategorias() {
         try {
+            if (gridRecuadros) {
+                gridRecuadros.innerHTML = '<p class="info-text"><i class="fas fa-spinner fa-spin"></i> Compilando métricas financieras...</p>';
+            }
+
             const response = await fetch('/api/categorias/resumen', { credentials: 'include' });
             const resData = await response.json();
 
-            if (!response.ok) throw new Error(resData.error || 'Error al compilar el resumen.');
+            if (!response.ok) throw new Error(resData.error || 'Error al compilar el resumen analítico.');
 
             const { granTotal, data: categorias } = resData;
 
-            // 1. Mostrar Gran Total Formateado en BS
+            // 1. Mostrar Gran Total Formateado en BS (Formato Moneda Local)
             if (txtGranTotal) {
-                txtGranTotal.textContent = new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(granTotal);
+                txtGranTotal.textContent = new Intl.NumberFormat('es-VE', { 
+                    minimumFractionDigits: 2, 
+                    maximumFractionDigits: 2 
+                }).format(granTotal) + " BS";
             }
 
             // 2. Renderizar Recuadros Financieros Laterales
@@ -29,25 +43,27 @@ export async function initCategoriasModulo() {
             renderizarGraficaTorta(categorias);
 
         } catch (error) {
-            console.error('Error en initCategoriasModulo:', error);
+            console.error('Error crítico en initCategoriasModulo:', error);
             if (gridRecuadros) {
-                gridRecuadros.innerHTML = `<p class="error-text">No se pudo cargar el análisis financiero: ${error.message}</p>`;
+                gridRecuadros.innerHTML = `<p class="error-box-sys">No se pudo cargar el análisis financiero: ${error.message}</p>`;
             }
         }
     }
 
     // --- Función: Pintar los Recuadros de Totales en el DOM ---
     function renderizarRecuadros(categorias) {
-        if (!gridRecuadros) return;
         gridRecuadros.innerHTML = '';
 
-        if (categorias.length === 0) {
-            gridRecuadros.innerHTML = '<p class="info-text">No se registran compras asociadas a ninguna categoría.</p>';
+        if (!categorias || categorias.length === 0) {
+            gridRecuadros.innerHTML = '<p class="info-text">No se registran compras indexadas asociadas a ninguna categoría fiscal.</p>';
             return;
         }
 
         categorias.forEach(cat => {
-            const montoFormateado = new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cat.total_bs);
+            const montoFormateado = new Intl.NumberFormat('es-VE', { 
+                minimumFractionDigits: 2, 
+                maximumFractionDigits: 2 
+            }).format(cat.total_bs);
             
             const card = document.createElement('div');
             card.className = 'categoria-card-item';
@@ -64,7 +80,7 @@ export async function initCategoriasModulo() {
                 </div>
             `;
 
-            // Escuchador de clic para abrir el desglose de facturas
+            // Escuchador de clic para abrir el desglose analítico de facturas
             card.addEventListener('click', () => {
                 abrirModalDesglose(cat.id, cat.nombre);
             });
@@ -74,27 +90,35 @@ export async function initCategoriasModulo() {
     }
 
     // --- Función: Construir / Actualizar la Gráfica de Chart.js ---
+    // --- Función: Construir / Actualizar la Gráfica de Chart.js ---
     function renderizarGraficaTorta(categorias) {
         const ctx = document.getElementById('chartCategoriasTorta');
-        if (!ctx) return;
-
-        // Si ya existía una gráfica activa, la destruimos para evitar parpadeos visuales al actualizar datos
-        if (instanciaGraficaTorta) {
-            instanciaGraficaTorta.destroy();
+        if (!ctx) {
+            console.warn("[SGAF - Categorías] Canvas 'chartCategoriasTorta' no disponible.");
+            return;
         }
 
-        // Filtramos categorías que tengan un gasto mayor a cero para que la torta sea estéticamente limpia
+        // ====================================================================
+        // 🔥 SOLUCIÓN CRÍTICA: Buscar y destruir la instancia directamente desde el DOM
+        // ====================================================================
+        const graficaExistente = Chart.getChart(ctx); 
+        if (graficaExistente) {
+            console.log("[SGAF - Categorías] Instancia previa detectada en el Canvas. Destruyendo...");
+            graficaExistente.destroy();
+        }
+
+        // Filtramos categorías que tengan un gasto real mayor a cero para limpiar la interfaz
         const categoriasConGasto = categorias.filter(c => parseFloat(c.total_bs) > 0);
 
         const labels = categoriasConGasto.map(c => c.nombre);
         const montos = categoriasConGasto.map(c => parseFloat(c.total_bs));
 
-        // Paleta de colores profesionales para la interfaz corporativa
         const coloresPlataforma = [
             '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', 
             '#858796', '#5a5c69', '#6f42c1', '#fd7e14', '#20c997'
         ];
 
+        // Creamos la nueva gráfica sobre el canvas completamente limpio
         instanciaGraficaTorta = new Chart(ctx, {
             type: 'pie',
             data: {
@@ -112,7 +136,10 @@ export async function initCategoriasModulo() {
                 plugins: {
                     legend: {
                         position: 'bottom',
-                        labels: { boxWidth: 12, font: { family: 'Poppins', size: 12 } }
+                        labels: { 
+                            boxWidth: 12, 
+                            font: { family: 'Poppins', size: 12 } 
+                        }
                     },
                     tooltip: {
                         callbacks: {
@@ -120,7 +147,10 @@ export async function initCategoriasModulo() {
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                 const valorActual = context.raw;
                                 const porcentaje = ((valorActual / total) * 100).toFixed(2);
-                                const formatoBs = new Intl.NumberFormat('es-VE').format(valorActual);
+                                const formatoBs = new Intl.NumberFormat('es-VE', {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                }).format(valorActual);
                                 return ` ${context.label}: ${formatoBs} BS (${porcentaje}%)`;
                             }
                         }
@@ -130,13 +160,13 @@ export async function initCategoriasModulo() {
         });
     }
 
-    // --- Función: Obtener y desplegar el Modal con las facturas ---
+    // --- Función: Obtener y desplegar el Modal de Auditoría ---
     async function abrirModalDesglose(categoriaId, categoriaNombre) {
         const tbody = document.getElementById('tbodyDetalleGastos');
         const tituloModal = document.getElementById('modalCategoriaTitulo');
         
-        if (tituloModal) tituloModal.textContent = `Desglose de Gastos: ${categoriaNombre}`;
-        if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-center">Cargando facturas...</td></tr>';
+        if (tituloModal) tituloModal.textContent = `Libro de Compras > Categoría: ${categoriaNombre}`;
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin"></i> Extrayendo historial analítico...</td></tr>';
         
         if (modalDesglose) modalDesglose.classList.remove('hidden');
 
@@ -149,51 +179,53 @@ export async function initCategoriasModulo() {
             const facturas = resData.data;
             tbody.innerHTML = '';
 
-            if (facturas.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center info-td">No hay facturas activas registradas en esta categoría.</td></tr>';
+            if (!facturas || facturas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center info-td">No hay facturas activas registradas en esta sección del Libro de Compras.</td></tr>';
                 return;
             }
 
             facturas.forEach(fac => {
                 const tr = document.createElement('tr');
-                
-                // Formatear Fecha
-                const fechaFormateada = fac.fecha_emision ? fac.fecha_emision.split('T')[0] : 'N/A';
-                // Formatear Monto
-                const montoBs = new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(fac.monto_bs);
+                const fechaFormateada = fac.fecha_emision ? fac.fecha_emision.split('T')[0] : 'S/F';
+                const montoBs = new Intl.NumberFormat('es-VE', { 
+                    minimumFractionDigits: 2, 
+                    maximumFractionDigits: 2 
+                }).format(fac.monto_bs);
+
+                const estatusLimpios = fac.estatus ? fac.estatus.toUpperCase() : 'PROCESADO';
 
                 tr.innerHTML = `
                     <td>${fechaFormateada}</td>
                     <td><strong>${fac.numero_factura}</strong></td>
                     <td>${fac.proveedor}</td>
-                    <td class="text-right text-primary"><strong>${montoBs}</strong></td>
-                    <td><span class="badge badge-success">${fac.estatus.toUpperCase()}</span></td>
+                    <td class="text-right text-primary" style="font-weight: bold;">${montoBs} BS</td>
+                    <td><span class="badge badge-success">${estatusLimpios}</span></td>
                 `;
                 tbody.appendChild(tr);
             });
 
         } catch (error) {
-            console.error('Error al cargar desglose:', error);
+            console.error('Error al cargar desglose en modal:', error);
             if (tbody) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center error-td">Error: ${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center error-td">Error de comunicación: ${error.message}</td></tr>`;
             }
         }
     }
 
-    // --- Manejo de Cierre de Modal ---
+    // --- MANEJO LOGÍSTICO DEL MODAL ---
     if (btnCerrarModal) {
         btnCerrarModal.onclick = () => {
             if (modalDesglose) modalDesglose.classList.add('hidden');
         };
     }
 
-    // Cerrar si hacen clic fuera del contenedor del modal
-    window.onclick = (event) => {
+    // Cerrar de forma nativa si hacen clic fuera del marco
+    window.addEventListener('click', (event) => {
         if (event.target === modalDesglose) {
             modalDesglose.classList.add('hidden');
         }
-    };
+    });
 
-    // Ejecutar carga inicial automática al instanciar el módulo
-    cargarAnaliticaCategorias();
+    // --- DISPARO AUTOMÁTICO CONTROLADO ---
+    await cargarAnaliticaCategorias();
 }

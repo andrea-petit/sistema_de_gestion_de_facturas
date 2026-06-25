@@ -6,6 +6,7 @@ import { initProveedoresModulo } from './modulos/proveedoresModule.js';
 import { initUsuariosModulo } from './modulos/usuariosModule.js';
 import { initPerfilModulo } from './modulos/perfilEmpresaModule.js';
 import { initCategoriasModulo } from './modulos/categoriasModule.js';
+import { initEditarFacturaModulo } from './modulos/editarFacturaModule.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const primerMenuItem = document.querySelector('.menu-item');
@@ -29,7 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initUsuariosModulo();
     initPerfilModulo();
     initCategoriasModulo();
+    initEditarFacturaModulo();
 });
+
 
 // Expose `switchView` to inline onclick handlers in HTML
 window.switchView = switchView;

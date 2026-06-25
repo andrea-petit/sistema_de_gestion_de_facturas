@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="styles/modulos/usuarios.css">
     <link rel="stylesheet" href="styles/modulos/perfil.css">
     <link rel="stylesheet" href="styles/modulos/categorias.css">
+    <link rel="stylesheet" href="styles/modulos/editarFactura.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
@@ -240,7 +241,99 @@
                 </div>
             </div>
 
-            <div id="view-editar-factura" class="view-panel"><div class="placeholder-view"><h3>Módulo: Editar Factura</h3><p>Modificación manual de datos fiscales.</p></div></div>
+            <div id="view-editar-factura" class="view-panel">
+                <div class="panel-header">
+                    <h2>Módulo de Corrección de Facturas</h2>
+                    <p>Localice el documento indexado y ajuste sus metadatos de control fiscal.</p>
+                </div>
+
+                <div class="search-box-direct-sys">
+                    <form id="formLocalizarFactura" class="search-form-inline">
+                        <div class="search-input-group">
+                            <label for="inputBuscarCodigo">Localizar Documento:</label>
+                            <div class="input-with-button">
+                                <input type="text" id="inputBuscarCodigo" placeholder="Ej: 00014910 o Razón Social..." required>
+                                <button type="submit" class="btn-sys btn-search-submit">
+                                    <i class="fas fa-search"></i> Buscar Facturas
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="msgBusquedaEstado" class="status-msg-area"></div>
+
+                <hr class="divider-sys">
+
+                <div id="contenedorFormularioEdicion" class="form-container-sys hidden-sys">
+                    <h3 class="section-title-sys"><i class="fas fa-edit"></i> Datos Modificables de la Factura</h3>
+                    <form id="formEditarFactura" class="system-form">
+                        <input type="hidden" id="editFacturaId">
+                        <input type="hidden" id="editProveedorId">
+
+                        <div class="form-grid-two-columns">
+                            <div class="form-group locked-field">
+                                <label for="editMontoTotal"><i class="fas fa-lock"></i> Monto Total (BS) - Protegido</label>
+                                <input type="text" id="editMontoTotal" class="input-sys disabled-input" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="editCategoria">Categoría Asignada</label>
+                                <select id="editCategoria" class="input-sys" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="editNroFactura">Número de Factura</label>
+                                <input type="text" id="editNroFactura" class="input-sys" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editNroControl">Número de Control</label>
+                                <input type="text" id="editNroControl" class="input-sys" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editFechaEmision">Fecha de Emisión</label>
+                                <input type="date" id="editFechaEmision" class="input-sys" required>
+                            </div>
+                        </div>
+                        <div class="form-actions-bar">
+                            <button type="button" id="btnLimpiarModulo" class="btn-sys btn-secondary">Cerrar Edición</button>
+                            <button type="submit" class="btn-sys btn-primary"><i class="fas fa-save"></i> Registrar Corrección</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="modalSelectorFacturas" class="modal-sys hidden-sys">
+                    <div class="modal-content-sys">
+                        <div class="modal-header-sys">
+                            <h3><i class="fas fa-copy"></i> Documentos Encontrados</h3>
+                            <button type="button" id="btnCerrarModalFacturas" class="close-modal-btn">&times;</button>
+                        </div>
+                        <div class="modal-body-sys">
+                            <p class="modal-instruction">Se encontraron múltiples coincidencias. Seleccione el documento exacto que requiere corregir:</p>
+                            
+                            <div class="table-responsive">
+                                <table class="table-system">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha Emisión</th>
+                                            <th>N° Factura</th>
+                                            <th>Proveedor</th>
+                                            <th class="text-right">Monto Total</th>
+                                            <th class="text-center">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyModalFacturas">
+                                        </tbody>
+                                </table>
+                            </div>
+
+                            <div class="pagination-container-sys">
+                                <button type="button" id="btnPrevPage" class="btn-page"><i class="fas fa-chevron-left"></i> Ant.</button>
+                                <span id="txtInfoPaginacion">Página 1 de 1</span>
+                                <button type="button" id="btnNextPage" class="btn-page">Sig. <i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <div id="view-categoria-gastos" class="view-panel">
                 <div class="panel-header">

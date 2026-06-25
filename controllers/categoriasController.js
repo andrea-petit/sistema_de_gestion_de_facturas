@@ -34,7 +34,7 @@ const categoriasController = {
             const categoriaIdNumerico = parseInt(id, 10);
 
             // Control de auditoría en tu consola de Node
-            console.log(`[SGAF - Categorías] Buscando gastos para ID recibido: "${id}" -> Convertido a entero: ${categoriaIdNumerico}`);
+            //console.log(`[SGAF - Categorías] Buscando gastos para ID recibido: "${id}" -> Convertido a entero: ${categoriaIdNumerico}`);
 
             if (isNaN(categoriaIdNumerico)) {
                 return res.status(400).json({ error: "El ID proporcionado no es un número válido." });

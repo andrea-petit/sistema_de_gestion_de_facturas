@@ -1,0 +1,116 @@
+.hidden-sys {
+    display: none !important;
+}
+.divider-sys {
+    border: 0;
+    height: 1px;
+    background: #e3e6f0;
+    margin: 25px 0;
+}
+.input-with-button {
+    display: flex;
+    gap: 10px;
+}
+.input-with-button input {
+    flex: 1;
+}
+.error-box-sys {
+    background-color: #fce8e6;
+    color: #c5221f;
+    padding: 12px;
+    border-radius: 6px;
+    margin-top: 15px;
+    font-weight: 500;
+}
+.success-box-sys {
+    background-color: #e6f4ea;
+    color: #137333;
+    padding: 12px;
+    border-radius: 6px;
+    margin-top: 15px;
+    font-weight: 500;
+}
+.status-msg-area {
+    min-height: 20px;
+}
+
+/* Contenedor del Modal de Fondo */
+.modal-sys {
+    position: fixed;
+    z-index: 1050;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+/* El Cuadro Blanco Contenedor */
+.modal-content-sys {
+    background-color: #ffffff;
+    border-radius: 8px;
+    width: 75%;
+    max-width: 850px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    animation: fadeInSys 0.25s ease-out;
+}
+.modal-header-sys {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e3e6f0;
+    background-color: #f8f9fc;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+.modal-header-sys h3 {
+    margin: 0;
+    color: #4e73df;
+}
+.close-modal-btn {
+    background: none;
+    border: 0;
+    font-size: 24px;
+    cursor: pointer;
+    color: #b7b9cc;
+}
+.close-modal-btn:hover {
+    color: #e74a3b;
+}
+.modal-body-sys {
+    padding: 20px;
+}
+/* Barra de Paginación */
+.pagination-container-sys {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+    font-weight: 500;
+}
+.btn-page {
+    background-color: #f8f9fc;
+    border: 1px solid #d1d3e2;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #4e73df;
+}
+.btn-page:disabled {
+    color: #b7b9cc;
+    cursor: not-allowed;
+    background-color: #eaecf4;
+}
+.btn-page:not(:disabled):hover {
+    background-color: #4e73df;
+    color: #ffffff;
+}
+@keyframes fadeInSys {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
