@@ -1,0 +1,5 @@
+/* Estilos específicos del módulo Buscar Comprobante de Retención */
+
+#view-comprobante-retencion {
+  font-family: var(--font-body);
+}

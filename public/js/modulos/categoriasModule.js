@@ -177,32 +177,75 @@ export async function initCategoriasModulo(forzarRefresco = false) {
             if (!response.ok) throw new Error(resData.error || 'Error al obtener las facturas.');
 
             const facturas = resData.data;
+
+            // Reset container
             tbody.innerHTML = '';
 
+            // If no records, show empty state and reset pagination UI
             if (!facturas || facturas.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="text-center info-td">No hay facturas activas registradas en esta sección del Libro de Compras.</td></tr>';
+                const pageInfo = document.getElementById('txtInfoPaginacionCategorias');
+                if (pageInfo) pageInfo.textContent = 'Página 0 de 0';
+                const prevBtn = document.getElementById('btnPrevPageCategorias');
+                const nextBtn = document.getElementById('btnNextPageCategorias');
+                if (prevBtn) prevBtn.disabled = true;
+                if (nextBtn) nextBtn.disabled = true;
                 return;
             }
 
-            facturas.forEach(fac => {
-                const tr = document.createElement('tr');
-                const fechaFormateada = fac.fecha_emision ? fac.fecha_emision.split('T')[0] : 'S/F';
-                const montoBs = new Intl.NumberFormat('es-VE', { 
-                    minimumFractionDigits: 2, 
-                    maximumFractionDigits: 2 
-                }).format(fac.monto_bs);
+            // Pagination configuration
+            const pageSize = 6; // records per page
+            let currentPage = 1;
+            const totalPages = Math.ceil(facturas.length / pageSize);
+            const prevBtn = document.getElementById('btnPrevPageCategorias');
+            const nextBtn = document.getElementById('btnNextPageCategorias');
+            const pageInfo = document.getElementById('txtInfoPaginacionCategorias');
 
-                const estatusLimpios = fac.estatus ? fac.estatus.toUpperCase() : 'PROCESADO';
+            // Render a specific page
+            function renderPage(page) {
+                tbody.innerHTML = '';
+                const startIdx = (page - 1) * pageSize;
+                const endIdx = startIdx + pageSize;
+                const pageItems = facturas.slice(startIdx, endIdx);
+                pageItems.forEach(fac => {
+                    const tr = document.createElement('tr');
+                    const fechaFormateada = fac.fecha_emision ? fac.fecha_emision.split('T')[0] : 'S/F';
+                    const montoBs = new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(fac.monto_bs);
+                    const estatusLimpios = fac.estatus ? fac.estatus.toUpperCase() : 'PROCESADO';
+                    tr.innerHTML = `
+                        <td>${fechaFormateada}</td>
+                        <td><strong>${fac.numero_factura}</strong></td>
+                        <td>${fac.proveedor}</td>
+                        <td class="text-right text-primary" style="font-weight: bold;">${montoBs} BS</td>
+                        <td><span class="badge badge-success">${estatusLimpios}</span></td>`;
+                    tbody.appendChild(tr);
+                });
+                // Update pagination UI
+                if (pageInfo) pageInfo.textContent = `Página ${page} de ${totalPages}`;
+                if (prevBtn) prevBtn.disabled = page <= 1;
+                if (nextBtn) nextBtn.disabled = page >= totalPages;
+            }
 
-                tr.innerHTML = `
-                    <td>${fechaFormateada}</td>
-                    <td><strong>${fac.numero_factura}</strong></td>
-                    <td>${fac.proveedor}</td>
-                    <td class="text-right text-primary" style="font-weight: bold;">${montoBs} BS</td>
-                    <td><span class="badge badge-success">${estatusLimpios}</span></td>
-                `;
-                tbody.appendChild(tr);
-            });
+            // Initial render
+            renderPage(currentPage);
+
+            // Navigation button handlers
+            if (prevBtn) {
+                prevBtn.onclick = () => {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        renderPage(currentPage);
+                    }
+                };
+            }
+            if (nextBtn) {
+                nextBtn.onclick = () => {
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        renderPage(currentPage);
+                    }
+                };
+            }
 
         } catch (error) {
             console.error('Error al cargar desglose en modal:', error);

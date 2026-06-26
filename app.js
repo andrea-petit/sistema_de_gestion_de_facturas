@@ -17,7 +17,6 @@ const categoriasRoutes = require('./routes/categorias_routes');
 const cors = require('cors');
 const app = express();
 app.use(express.json());
-// Allow cross-origin requests with credentials (cookies) when needed
 app.use(cors({ origin: true, credentials: true }));
 const PORT = process.env.PORT || 3000;
 
@@ -48,6 +47,10 @@ app.get('/', (req, res) => {
 
 app.get('/dashboard', (req, res) => {
     if (req.session && req.session.user) {
+    // Prevent browser from caching this page — forces revalidation on back button
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
     } else {
         res.redirect('/');

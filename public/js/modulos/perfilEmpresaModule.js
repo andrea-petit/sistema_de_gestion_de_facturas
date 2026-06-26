@@ -271,6 +271,7 @@ export function initPerfilModulo() {
             try {
                 await fetch('/api/users/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
                 sessionStorage.clear();
+                localStorage.removeItem('token');
                 localStorage.removeItem('userRol'); 
                 await Swal.fire({
                     icon: 'success',

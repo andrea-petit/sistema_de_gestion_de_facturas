@@ -114,3 +114,51 @@
     from { transform: scale(0.95); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
 }
+
+/* Alias classes for modal to match HTML naming */
+.modal-sys {
+    font-size: 0.85rem; /* Slightly smaller text for better fit */
+}
+.modal-sys-content {
+    background-color: #ffffff;
+    border-radius: 8px;
+    width: 75%;
+    max-width: 850px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    animation: fadeInSys 0.25s ease-out;
+    padding: 20px;
+}
+.modal-sys-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e3e6f0;
+    background-color: #f8f9fc;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+.modal-sys-header h3 {
+    margin: 0;
+    color: #4e73df;
+}
+.modal-sys-body {
+    padding: 20px;
+}
+/* Table styling within modal */
+.modal-sys .table-system {
+    border-collapse: collapse;
+    width: 100%;
+    table-layout: fixed;
+    margin-top: 10px;
+}
+.modal-sys .table-system th,
+.modal-sys .table-system td {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+.modal-sys .table-system th {
+    background-color: #f8f9fc;
+    color: #4e73df;
+}

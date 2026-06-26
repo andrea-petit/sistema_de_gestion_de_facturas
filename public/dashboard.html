@@ -1,10 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión Automatizada de Facturación</title>
     <link rel="stylesheet" href="styles/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles/modulos/subirFacturas.css">
     <link rel="stylesheet" href="styles/modulos/buscarFactura.css">
     <link rel="stylesheet" href="styles/modulos/proveedores.css">
@@ -13,13 +14,15 @@
     <link rel="stylesheet" href="styles/modulos/perfil.css">
     <link rel="stylesheet" href="styles/modulos/categorias.css">
     <link rel="stylesheet" href="styles/modulos/editarFactura.css">
+    <link rel="stylesheet" href="styles/modulos/comprobanteRetencion.css">
+    <link rel="stylesheet" href="styles/modulos/generarReporte.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="sidebar-brand">El Faro - SGAF</div>
+        <div class="sidebar-brand">El Faro</div>
         <div class="sidebar-menu">
             <div class="menu-item">
                 <button class="menu-btn">Facturas</button>
@@ -71,17 +74,19 @@
                     Registrar Empresa
                 </button>
 
-                <div class="sidebar-user-footer">
-                    <div class="user-avatar">
-                        <span id="userInitials">U</span>
+                <div class="sidebar-user-row">
+                    <div class="sidebar-user-info">
+                        <div class="user-avatar">
+                            <span id="userInitials">U</span>
+                        </div>
+                        <div class="user-info">
+                            <span id="sidebarUserName" class="user-name">Cargando...</span>
+                            <small id="sidebarUserRole" class="user-role">Rol</small>
+                        </div>
                     </div>
-                    <div class="user-info">
-                        <span id="sidebarUserName" class="user-name">Cargando...</span>
-                        <small id="sidebarUserRole" class="user-role">Rol</small>
-                    </div>
-                    <button id="btnLogout" title="Cerrar Sesión" onclick="handleLogout()">
+                    <button id="btnLogout" class="btn-logout" title="Cerrar Sesión" onclick="handleLogout()">
                         <i class="fas fa-sign-out-alt"></i>
-                    </div>
+                    </button>
                 </div>
             </div>
         </div>
@@ -383,6 +388,11 @@
                                     <tbody id="tbodyDetalleGastos">
                                         </tbody>
                                 </table>
+                                 <div class="pagination-container-sys">
+                                     <button type="button" id="btnPrevPageCategorias" class="btn-page" disabled>&laquo; Anterior</button>
+                                     <span id="txtInfoPaginacionCategorias" class="txt-info-pag">Página 1 de 1</span>
+                                     <button type="button" id="btnNextPageCategorias" class="btn-page" disabled>Siguiente &raquo;</button>
+                                 </div>
                             </div>
                         </div>
                     </div>

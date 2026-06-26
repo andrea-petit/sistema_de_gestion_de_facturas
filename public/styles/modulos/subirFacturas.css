@@ -1,5 +1,70 @@
 /* Estilos específicos del módulo Subir Facturas */
-/* Mover aquí reglas relacionadas con #view-subir-facturas cuando corresponda */
+
+.upload-section {
+  border: 2px dashed #cbd5e1;
+  padding: 35px;
+  text-align: center;
+  border-radius: 8px;
+  background: #f1f5f9;
+  cursor: pointer;
+  margin-bottom: 20px;
+  font-family: var(--font-body);
+}
+.upload-section:hover {
+  border-color: var(--primary);
+  background: #eff6ff;
+}
+input[type="file"] {
+  display: none;
+}
+
+.loading {
+  display: none;
+  text-align: center;
+  margin: 15px 0;
+  color: var(--primary);
+  font-weight: bold;
+}
+.result-section {
+  display: none;
+  margin-top: 25px;
+  border-top: 2px solid var(--border);
+  padding-top: 20px;
+}
+
+/* Mensajes de Estado Interno */
+.status-alert {
+  padding: 12px 15px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 20px;
+  display: none;
+}
+.status-alert.warning {
+  display: block;
+  background-color: #fff7ed;
+  color: var(--warning);
+  border: 1px solid #ffedd5;
+}
+.status-alert.success {
+  display: block;
+  background-color: #f0fdf4;
+  color: var(--success);
+  border: 1px solid #dcfce7;
+}
+
+.raw-text {
+  background: #1e293b;
+  color: #38bdf8;
+  padding: 15px;
+  border-radius: 6px;
+  max-height: 150px;
+  overflow-y: auto;
+  font-size: 12px;
+  white-space: pre-wrap;
+  margin-top: 10px;
+}
 
 .calc-grid {
   display: grid;

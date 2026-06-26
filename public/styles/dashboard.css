@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Staatliches&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 
 :root {
   --primary: #2563eb;
@@ -13,8 +13,8 @@
   --sidebar-bg: #0f172a;
   --sidebar-text: #f1f5f9;
   --sidebar-hover: #1e293b;
-  --font-titles: "Staatliches", sans-serif;
-  --font-body: "DM Sans", sans-serif;
+  --font-titles: "Outfit", sans-serif;
+  --font-body: "Plus Jakarta Sans", sans-serif;
 }
     
 * {
@@ -58,11 +58,12 @@ html.swal2-height-auto {
 }
 .sidebar-brand {
   padding: 24px;
-  font-size: 20px;
+  font-size: 22px;
   font-family: var(--font-titles);
+  font-weight: 800;
   border-bottom: 1px solid var(--sidebar-hover);
   color: #38bdf8;
-  letter-spacing: 0.5px;
+  letter-spacing: -0.01em;
 }
 .sidebar-menu {
   flex: 1;
@@ -165,37 +166,24 @@ html.swal2-height-auto {
   border: 1px solid var(--border);
   margin-bottom: 20px;
 }
-h2 {
-  font-size: 22px;
-  color: #0f172a;
-  margin-bottom: 8px;
-  
+h1, h2, h3, h4 {
   font-family: var(--font-titles);
+  color: #0f172a;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+h2 {
+  font-size: 24px;
+  margin-bottom: 8px;
 }
 .description {
   color: var(--text-muted);
   margin-bottom: 24px;
   font-size: 15px;
   font-family: var(--font-body);
+  line-height: 1.6;
 }
 
-.upload-section {
-  border: 2px dashed #cbd5e1;
-  padding: 35px;
-  text-align: center;
-  border-radius: 8px;
-  background: #f1f5f9;
-  cursor: pointer;
-  margin-bottom: 20px;
-  font-family: var(--font-body);
-}
-.upload-section:hover {
-  border-color: var(--primary);
-  background: #eff6ff;
-}
-input[type="file"] {
-  display: none;
-}
 
 .btn {
   background-color: var(--primary);
@@ -225,41 +213,7 @@ input[type="file"] {
   background-color: #15803d;
 }
 
-.loading {
-  display: none;
-  text-align: center;
-  margin: 15px 0;
-  color: var(--primary);
-  font-weight: bold;
-}
-.result-section {
-  display: none;
-  margin-top: 25px;
-  border-top: 2px solid var(--border);
-  padding-top: 20px;
-}
 
-/* --- Mensajes de Estado Interno --- */
-.status-alert {
-  padding: 12px 15px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 20px;
-  display: none;
-}
-.status-alert.warning {
-  display: block;
-  background-color: #fff7ed;
-  color: var(--warning);
-  border: 1px solid #ffedd5;
-}
-.status-alert.success {
-  display: block;
-  background-color: #f0fdf4;
-  color: var(--success);
-  border: 1px solid #dcfce7;
-}
 
 /* --- Formulario de Verificación del Usuario --- */
 .form-group {
@@ -293,17 +247,7 @@ input[type="file"] {
   background-color: #fffaf8;
 }
 
-.raw-text {
-  background: #1e293b;
-  color: #38bdf8;
-  padding: 15px;
-  border-radius: 6px;
-  max-height: 150px;
-  overflow-y: auto;
-  font-size: 12px;
-  white-space: pre-wrap;
-  margin-top: 10px;
-}
+
 .placeholder-view {
   background: var(--card);
   padding: 40px;
@@ -379,15 +323,33 @@ input[type="file"] {
   font-weight: bold;
   font-size: 12px;
 }
+.user-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.user-name {
+  font-weight: 600;
+  color: var(--sidebar-text);
+}
+.user-role {
+  color: #94a3b8;
+  font-size: 11px;
+}
 .btn-logout {
   background: none;
   border: none;
   color: #ef4444; /* Rojo */
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  padding: 6px 10px;
+  width: 32px;
+  height: 32px;
   border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 .btn-logout:hover {
   background-color: var(--sidebar-hover);
