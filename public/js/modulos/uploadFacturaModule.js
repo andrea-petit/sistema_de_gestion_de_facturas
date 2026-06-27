@@ -25,7 +25,6 @@ export async function initUploadForm() {
         const resEmpresaJson = await resEmpresa.json();
         if (resEmpresaJson.ok && resEmpresaJson.data) {
             configFiscalEmpresa = resEmpresaJson.data;
-            // console.log("[SGAF Fiscal] Perfil detectado:", configFiscalEmpresa.tipo_contribuyente);
         }
     } catch (err) {
         console.error("No se pudo pre-cargar el perfil de empresa:", err);
@@ -86,11 +85,9 @@ export async function initUploadForm() {
                     let alicuotaADesglosar = 16;
 
                     if (montoIvaDetectado === 0 && montoAfectoDetectado === 0 && montoExentoDetectado > 0 && montoExentoDetectado >= totalFactura) {
-                        console.log("[SGAF Analizador] Factura totalmente exenta detectada.");
                         alicuotaADesglosar = 0;
                         if (selectorAlicuota) selectorAlicuota.value = "0";
                     } else if (textoUpper.includes("EXENTO") || (textoUpper.match(/\(E\)/g) || []).length > 2) {
-                        console.log("[SGAF Analizador] Se detectó comportamiento exento (0% IVA)." );
                         alicuotaADesglosar = 0;
                         if (selectorAlicuota) selectorAlicuota.value = "0";
                     } else {
@@ -204,8 +201,8 @@ export async function initUploadForm() {
                 montoExento: parseFloat(valMontoExento?.value) || 0,
                 montoAfectoIva: parseFloat(valBaseImponible.value) || 0,
                 montoIva: parseFloat(document.getElementById('valMontoIva').value) || 0,
-                porcentaje_retencion: parseFloat(document.getElementById('valPorcentajeRetencion').value) || 0,
-                monto_retencion: parseFloat(document.getElementById('valMontoRetencion').value) || 0
+                porcentaje_retencion: parseFloat(document.getElementById('valPorcentajeRetencion')?.value) || 0,
+                monto_retencion: parseFloat(document.getElementById('valMontoRetencion')?.value) || 0
             };
 
             try {
@@ -226,18 +223,25 @@ export async function initUploadForm() {
                         timer: 2200,
                         showConfirmButton: false
                     });
+
+                    // 🔥 EJECUCIÓN DEL COMPROBANTE DINÁMICO
+                    if (resGuardar.comprobante) {
+                        window.open(`/api/facturas/comprobante/${resGuardar.id}`, '_blank');
+                    }
+
                     verificationForm.reset();
                     uploadForm.reset();
-                    uploadLabel.innerText = "Haz clic para seleccionar la imagen de la factura";
+                    if (uploadLabel) uploadLabel.innerText = "Haz clic para seleccionar la imagen de la factura";
                     resultSection.style.display = 'none';
                 } else {
                     await Swal.fire({
                         icon: 'error',
                         title: 'Error al guardar',
-                        text: resGuardar.error || 'Ocurrió un error al guardar la factura.'
+                        text: resGuardar.error || resGuardar.mensaje || 'Ocurrió un error al guardar la factura.'
                     });
                 }
             } catch (err) {
+                console.error("[SGAF Error Frontend Guardar]:", err);
                 await Swal.fire({
                     icon: 'error',
                     title: 'Error de conexión',
@@ -314,8 +318,12 @@ function ejecutarCalculoFiscal(base, alicuota, montoExento = 0) {
     const montoTotalFinanciero = montoExentoSeguro + base + montoIva - montoRetencion;
 
     document.getElementById('valMontoIva').value = montoIva.toFixed(2);
-    document.getElementById('valPorcentajeRetencion').value = retencion;
-    document.getElementById('valMontoRetencion').value = montoRetencion.toFixed(2);
+    
+    const inputPorc = document.getElementById('valPorcentajeRetencion');
+    if (inputPorc) inputPorc.value = retencion;
+    
+    const inputMontoRet = document.getElementById('valMontoRetencion');
+    if (inputMontoRet) inputMontoRet.value = montoRetencion.toFixed(2);
 
     return montoTotalFinanciero;
 }
@@ -354,9 +362,14 @@ function recalcularDesdeBase(base, alicuota, montoExento = 0) {
     document.getElementById('valTotal').value = totalFinanciero.toFixed(2);
 }
 
+// ====================================================================
+// 🔥 SOLUCIÓN ARREGLADA: Validación inteligente de Monto Exento en Cero
+// ====================================================================
 function verificarCalidadDatos() {
     const statusAlert = document.getElementById('statusAlert');
     if (!statusAlert) return;
+
+    const alicuotaActual = document.getElementById('valPorcentajeAlicuota')?.value || "16";
 
     const inputs = [
         document.getElementById('valProveedor'),
@@ -376,21 +389,26 @@ function verificarCalidadDatos() {
 
     inputs.forEach(input => {
         if (!input) return;
-        const val = input.value.trim().toUpperCase();
-        if (!val || val === 'NO DETECTADO' || val === 'SIN CATEGORÍA' || val === '0.00' || val === '0') {
-            if (input.id === 'valMontoIva' && document.getElementById('valPorcentajeAlicuota').value === '0') {
-                input.classList.remove('missing-field');
-                return;
-            }
-            if (input.id === 'valBaseImponible' && document.getElementById('valPorcentajeAlicuota').value === '0') {
-                input.classList.remove('missing-field');
-                return;
-            }
-            if (input.id === 'valMontoExento' && document.getElementById('valPorcentajeAlicuota').value !== '0') {
-                input.classList.remove('missing-field');
-                return;
-            }
+        const val = input.value.trim();
+        const valUpper = val.toUpperCase();
+        
+        // Excepciones explícitas basadas en la lógica contable del IVA
+        if (input.id === 'valMontoExento' && alicuotaActual !== '0' && (val === '0.00' || val === '0' || val === '')) {
+            // Si hay IVA y el exento es cero, es 100% lícito contablemente. Quitamos error.
+            input.classList.remove('missing-field');
+            return;
+        }
+        if (input.id === 'valMontoIva' && alicuotaActual === '0') {
+            input.classList.remove('missing-field');
+            return;
+        }
+        if (input.id === 'valBaseImponible' && alicuotaActual === '0') {
+            input.classList.remove('missing-field');
+            return;
+        }
 
+        // Regla general de campo vacío o no detectado
+        if (!val || valUpper === 'NO DETECTADO' || valUpper === 'SIN CATEGORÍA' || val === '0.00' || val === '0') {
             input.classList.add('missing-field');
             camposIncompletos = true;
         } else {

@@ -121,7 +121,7 @@ const proveedoresController = {
                 usuario_id: req && req.session ? (req.session.userId || null) : null,
                 tabla_afectada: 'proveedores',
                 registro_id: id,
-                accion: 'update',
+                accion: 'UPDATE',
                 valor_anterior: JSON.stringify(estadoAnterior), // JSON estructurado perfecto
                 valor_nuevo: JSON.stringify(estadoNuevo)       // JSON estructurado perfecto
             };

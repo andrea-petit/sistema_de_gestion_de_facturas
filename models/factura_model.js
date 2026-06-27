@@ -1,7 +1,11 @@
+require("dotenv").config();
 const pool = require("../config/bd");
 const empresaModel = require("./empresa_model");
 
 const facturaModel = {
+  // Exportamos el pool por si el controlador lo necesita directamente
+  pool,
+
   calculateImpuestos(facturaData) {
     const montoTotal = Number(facturaData.monto_total || 0.0);
     const montoExento = Number(facturaData.monto_exento || 0.0);
@@ -53,7 +57,7 @@ const facturaModel = {
       porcentaje_alicuota: Number(porcentajeAlicuota.toFixed(2)),
       base_imponible: baseImponible,
       monto_iva: ivaCalculado,
-      porcentaje_retencion: Number(porcentajeRetencion.toFixed(2)),
+      percentage_retencion: Number(porcentajeRetencion.toFixed(2)), // Mapeado al uso interno
       monto_retencion: montoRetencion,
     };
   },
@@ -71,158 +75,114 @@ const facturaModel = {
     );
   },
 
-  getCompraImpuestosByCompraId(compraId) {
-    return new Promise((resolve, reject) => {
-      pool.query(
-        "SELECT * FROM compra_impuestos WHERE compra_id = $1",
-        [compraId],
-        (error, results) => {
-          if (error) {
-            return reject(error);
-          }
-          resolve(results.rows);
-        },
+  // =================================================================
+  // GUARDADO TRANSACCIONAL UNIFICADO (COMPRA + COMPROBANTE + IMPUESTOS)
+  // =================================================================
+  async createFacturaCompleta(facturaData) {
+    // Obtenemos un cliente exclusivo de la conexión para poder manejar la transacción
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      // 1. Ejecutar el cálculo exacto de impuestos en backend
+      const impuestosCalculados = this.calculateImpuestos(facturaData);
+
+      let comprobanteRetencionId = null;
+      let numeroComprobanteGenerado = null;
+
+      // 2. Determinar si requiere generación automática de Comprobante de Retención
+      const porcRet = this.normalizeRetencionPorcentaje(
+        facturaData.porcentaje_retencion,
       );
-    });
-  },
 
-  createRetencionFromFactura(compraId, porcentajeRetencion) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const porcentaje = Number(porcentajeRetencion);
-        if (!this.isValidRetentionSelection(porcentaje)) {
-          return reject(
-            new Error(
-              "El porcentaje de retención debe ser un valor entre 1 y 5",
-            ),
-          );
-        }
+      if (porcRet > 0 && impuestosCalculados.monto_retencion > 0) {
+        // Estructurar el Período Fiscal (Ej: "202606" para Junio de 2026)
+        const fecha = new Date(facturaData.fecha_emision);
+        const anio = fecha.getFullYear();
+        const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+        const periodoFiscal = `${anio}${mes}`;
 
-        const impuestos = await this.getCompraImpuestosByCompraId(compraId);
-        if (!impuestos || impuestos.length === 0) {
-          return reject(
-            new Error(
-              "No se encontró información de impuestos para esta factura",
-            ),
-          );
-        }
-
-        const impuestoBase =
-          impuestos.find((item) => Number(item.porcentaje_retencion) === 0) ||
-          impuestos[0];
-        const montoIva = Number(impuestoBase.monto_iva || 0.0);
-        if (montoIva <= 0) {
-          return reject(
-            new Error("No hay monto de IVA disponible para generar retención"),
-          );
-        }
-
-        const montoRetencion = Number(
-          ((montoIva * porcentaje) / 100).toFixed(2),
+        // Conseguir el correlativo del mes bloqueando la fila para evitar colisiones concurrentes (Race Conditions)
+        const resCorrelativo = await client.query(
+          "SELECT COUNT(*) as total FROM public.comprobante_retencion WHERE periodo_fiscal = $1",
+          [periodoFiscal],
         );
-        const queryText =
-          "INSERT INTO compra_impuestos (compra_id, porcentaje_alicuota, base_imponible, monto_iva, porcentaje_retencion, monto_retencion) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *";
-        const queryValues = [
-          compraId,
-          impuestoBase.porcentaje_alicuota,
-          impuestoBase.base_imponible,
-          impuestoBase.monto_iva,
-          porcentaje,
-          montoRetencion,
-        ];
+        const secuencia = String(
+          parseInt(resCorrelativo.rows[0].total, 10) + 1,
+        ).padStart(8, "0");
+        numeroComprobanteGenerado = `${periodoFiscal}${secuencia}`;
 
-        pool.query(queryText, queryValues, (error, results) => {
-          if (error) {
-            return reject(error);
-          }
-          resolve(results.rows && results.rows[0] ? results.rows[0] : null);
-        });
-      } catch (error) {
-        reject(error);
+        // Insertar en 'comprobante_retencion'
+        const queryComp = `
+          INSERT INTO public.comprobante_retencion (proveedor_id, numero_comprobante, fecha_emision, periodo_fiscal)
+          VALUES ($1, $2, $3, $4) RETURNING id;
+        `;
+        const resComp = await client.query(queryComp, [
+          facturaData.proveedor_id,
+          numeroComprobanteGenerado,
+          facturaData.fecha_emision,
+          periodoFiscal,
+        ]);
+        comprobanteRetencionId = resComp.rows[0].id;
       }
-    });
-  },
 
-  createCompraImpuesto(compraId, impuestoData) {
-    return new Promise((resolve, reject) => {
-      const queryText =
-        "INSERT INTO compra_impuestos (compra_id, porcentaje_alicuota, base_imponible, monto_iva, porcentaje_retencion, monto_retencion) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *";
-      const queryValues = [
-        compraId,
-        impuestoData.porcentaje_alicuota,
-        impuestoData.base_imponible,
-        impuestoData.monto_iva,
-        impuestoData.porcentaje_retencion,
-        impuestoData.monto_retencion,
-      ];
-
-      pool.query(queryText, queryValues, (error, results) => {
-        if (error) {
-          return reject(error);
-        }
-        resolve(results.rows && results.rows[0] ? results.rows[0] : null);
-      });
-    });
-  },
-
-  createFactura(facturaData) {
-    return new Promise((resolve, reject) => {
-      const porcentajeAlicuota = Number.isFinite(
-        Number(facturaData.porcentaje_alicuota),
-      )
-        ? Number(facturaData.porcentaje_alicuota)
-        : 16.0;
-      const porcentajeRetencion = Number.isFinite(
-        Number(facturaData.porcentaje_retencion),
-      )
-        ? Number(facturaData.porcentaje_retencion)
-        : 0.0;
-
-      const impuestoData = this.calculateImpuestos({
-        monto_total: facturaData.monto_total,
-        monto_exento: facturaData.monto_exento,
-        monto_afecto_iva: facturaData.monto_afecto_iva,
-        monto_iva: facturaData.monto_iva,
-        porcentaje_alicuota: porcentajeAlicuota,
-        porcentaje_retencion: porcentajeRetencion,
-      });
-
-      const queryText =
-        "INSERT INTO compras (proveedor_id, comprobante_retencion, fecha_emision, numero_factura, numero_control, monto_total, categoria, img_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *";
-      const queryValues = [
+      // 3. Insertar en la tabla principal de 'compras' vinculando el comprobante obtenido
+      const queryCompra = `
+        INSERT INTO public.compras (
+          proveedor_id, comprobante_retencion, tipo_documento, fecha_emision, 
+          numero_factura, numero_control, monto_total, categoria, img_url, estatus
+        ) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'activa') RETURNING *;
+      `;
+      const valuesCompra = [
         facturaData.proveedor_id,
-        facturaData.comprobante_retencion || null,
+        comprobanteRetencionId, // uuid o null si no aplica retención
+        facturaData.tipo_documento || "factura",
         facturaData.fecha_emision,
         facturaData.numero_factura,
-        facturaData.numero_control,
+        facturaData.numero_control || facturaData.numero_factura,
         facturaData.monto_total || 0.0,
         facturaData.categoria,
         facturaData.img_url || null,
       ];
 
-      pool.query(queryText, queryValues, async (error, results) => {
-        if (error) {
-          return reject(error);
-        }
+      const resCompra = await client.query(queryCompra, valuesCompra);
+      const nuevaCompra = resCompra.rows[0];
 
-        const nuevaCompra =
-          results.rows && results.rows[0] ? results.rows[0] : null;
-        if (!nuevaCompra) {
-          return resolve(null);
-        }
+      // 4. Insertar los desgloses en 'compra_impuestos' usando el id de la compra generada
+      const queryImpuestos = `
+        INSERT INTO public.compra_impuestos (
+          compra_id, porcentaje_alicuota, base_imponible, monto_iva, porcentaje_retencion, monto_retencion
+        ) 
+        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
+      `;
+      const valuesImpuestos = [
+        nuevaCompra.id,
+        impuestosCalculados.porcentaje_alicuota,
+        impuestosCalculados.base_imponible,
+        impuestosCalculados.monto_iva,
+        porcRet,
+        impuestosCalculados.monto_retencion,
+      ];
 
-        try {
-          const compraImpuesto = await this.createCompraImpuesto(
-            nuevaCompra.id,
-            impuestoData,
-          );
-          nuevaCompra.impuesto = compraImpuesto;
-          resolve(nuevaCompra);
-        } catch (insertError) {
-          reject(insertError);
-        }
-      });
-    });
+      const resImpuestos = await client.query(queryImpuestos, valuesImpuestos);
+
+      // Adjuntamos la información de impuestos y comprobante al objeto final de retorno
+      nuevaCompra.impuesto = resImpuestos.rows[0];
+      nuevaCompra.numero_comprobante = numeroComprobanteGenerado; // Se pasa al controlador para la respuesta HTTP
+
+      // Todo marchó bien, consolidamos la transacción
+      await client.query("COMMIT");
+      return nuevaCompra;
+    } catch (error) {
+      // Si algo falló en cualquiera de los pasos, revertimos los cambios por completo
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      // Liberamos el cliente de vuelta al pool de conexiones
+      client.release();
+    }
   },
 
   getFacturaByProveedorAndNumero(proveedorId, numeroFactura) {
@@ -384,7 +344,6 @@ const facturaModel = {
     });
   },
 
-
   buscarFacturasPaginadas(texto, limite, offset) {
     return new Promise((resolve, reject) => {
       const patron = `%${texto}%`;
@@ -411,20 +370,110 @@ const facturaModel = {
       // Ejecutamos ambas consultas en paralelo para máxima eficiencia
       Promise.all([
         pool.query(queryRegistros, [patron, limite, offset]),
-        pool.query(queryConteo, [patron])
+        pool.query(queryConteo, [patron]),
       ])
-      .then(([resRegistros, resConteo]) => {
-        resolve({
-          registros: resRegistros.rows,
-          totalAbsoluto: parseInt(resConteo.rows[0].total, 10)
+        .then(([resRegistros, resConteo]) => {
+          resolve({
+            registros: resRegistros.rows,
+            totalAbsoluto: parseInt(resConteo.rows[0].total, 10),
+          });
+        })
+        .catch((error) => {
+          reject(error);
         });
-      })
-      .catch(error => {
-        reject(error);
-      });
     });
-  }
+  },
 
+  async buscarComprobantePorCriterio(criterio) {
+    const queryText = `
+      SELECT 
+        cr.id AS comprobante_id,
+        cr.numero_comprobante,
+        cr.fecha_emision AS fecha_comprobante,
+        cr.periodo_fiscal,
+        p.razon_social AS proveedor_nombre,
+        p.rif AS proveedor_rif,
+        p.direccion AS proveedor_direccion,
+        c.id AS compra_id,
+        c.numero_factura,
+        c.numero_control,
+        c.monto_total,
+        ci.base_imponible,
+        ci.monto_iva,
+        ci.porcentaje_alicuota,
+        ci.porcentaje_retencion,
+        ci.monto_retencion
+      FROM public.comprobante_retencion cr
+      JOIN public.proveedores p ON cr.proveedor_id = p.id
+      JOIN public.compras c ON c.comprobante_retencion = cr.id
+      JOIN public.compra_impuestos ci ON ci.compra_id = c.id
+      WHERE cr.numero_comprobante = $1 
+        OR c.numero_factura = $1 
+        OR p.rif = $1;
+    `;
+
+    const res = await pool.query(queryText, [criterio.trim()]);
+    return res.rows; // Devuelve todos los datos desglosados listos para re-poblar el HTML de impresión
+  },
+
+  // Dentro de tu facturaModel.js
+
+  async getComprobanteDataForReport(facturaId) {
+    try {
+      const query = `
+      SELECT 
+        -- Datos de la Compra/Factura
+        c.id,
+        c.numero_factura AS "nroFactura",
+        c.numero_control AS "nroControl",
+        c.fecha_emision AS "fechaEmision",
+        c.fecha_registro AS "fechaRegistro",
+        c.monto_total AS "montoTotal",
+        c.img_url AS "imgUrl",
+        
+        -- Datos del Proveedor (Emisor)
+        p.razon_social AS "proveedor",
+        p.tipo_documento || '-' || p.rif AS "rifEmisor", -- O la columna RIF si usas p.id como string/RIF
+        p.direccion AS "direccion",
+        
+        -- Impuestos y Retención (Tabla Relacionada)
+        ci.porcentaje_alicuota AS "porcentajeAlicuota",
+        ci.base_imponible AS "montoAfectoIva",
+        ci.monto_iva AS "montoIva",
+        ci.porcentaje_retencion AS "porcentajeRetencion",
+        ci.monto_retencion AS "montoRetencion",
+        
+        -- El cálculo contable del Monto Exento (Monto Total - Base Imponible - IVA)
+        ROUND((c.monto_total - ci.base_imponible - ci.monto_iva), 2) AS "montoExento",
+
+        -- Datos del Comprobante de Retención Generado
+        cr.numero_comprobante AS "comprobante",
+        cr.fecha_emision AS "fechaEmisionComprobante",
+        cr.periodo_fiscal AS "periodoFiscal",
+
+        -- Datos de tu Empresa (Agente de Retención)
+        e.nombre AS "empresaNombre",
+        e.tipo_documento || '-' || e.rif AS "empresaRif",
+        e.direccion AS "empresaDireccion"
+      FROM public.compras c
+      INNER JOIN public.proveedores p ON c.proveedor_id = p.id
+      INNER JOIN public.compra_impuestos ci ON c.id = ci.compra_id
+      LEFT JOIN public.comprobante_retencion cr ON c.comprobante_retencion = cr.id
+      CROSS JOIN public.empresa e
+      WHERE c.id = $1;
+    `;
+
+      // Si estás usando la instancia global o importada del pool de 'pg'
+      const resultado = await pool.query(query, [facturaId]);
+      return resultado.rows[0] || null;
+    } catch (error) {
+      console.error(
+        "[SGAF Model Error] Error en getComprobanteDataForReport:",
+        error,
+      );
+      throw error;
+    }
+  },
 };
 
 module.exports = facturaModel;

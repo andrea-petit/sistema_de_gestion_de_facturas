@@ -1,0 +1,18 @@
+@media print {
+  /* Ocultar elementos de la interfaz web */
+  .navbar, .btn-regresar, .sidebar, .footer-web {
+    display: none !important;
+  }
+  /* Ajustar la hoja para que ocupe el tamaño real */
+  body {
+    background: white;
+    color: black;
+    font-size: 12pt;
+  }
+  .contenedor-comprobante {
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+}

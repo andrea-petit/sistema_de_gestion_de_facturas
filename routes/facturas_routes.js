@@ -10,6 +10,7 @@ router.get('/facturas/buscar/coincidencia', facturasController.buscarFacturaPorT
 router.put('/facturas/:id', authMiddleware, facturasController.editarFactura);
 router.post('/facturas/:id/retencion', authMiddleware, facturasController.addRetencionAFactura);
 router.get('/facturas', authMiddleware, facturasController.getFacturasByFechaEmision);
+router.get("/facturas/comprobante/:id", facturasController.renderComprobante);
 
 
 module.exports = router;

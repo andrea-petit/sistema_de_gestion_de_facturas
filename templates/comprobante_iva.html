@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprobante de Retención IVA - {{numero_comprobante}}</title>
+    
+    <!-- Estilos base para la estructura del reporte visual -->
+    <link rel="stylesheet" href="public/styles/prints/style-reporte.css">
+    
+    <!-- Estilos específicos para la optimización de la hoja de impresión o PDF -->
+    <link rel="stylesheet" href="public/styles/prints/print.css">
+</head>
+<body>
+
+    <div class="contenedor-comprobante">
+        
+        <!-- ENCABEZADO: DATOS DEL EMISOR (Echo Systems) -->
+        <table class="tabla-encabezado">
+            <tr>
+                <td style="width: 55%; vertical-align: top;">
+                    <h2 class="empresa-nombre" style="margin: 0 0 5px 0; color: #1a365d;">ECHO SYSTEMS, C.A.</h2>
+                    <p class="empresa-rif" style="margin: 2px 0;"><strong>RIF:</strong> J-50478291-0</p>
+                    <p class="empresa-dir" style="margin: 2px 0; font-size: 10pt; color: #4a5568;">
+                        Av. Ollarvazu, Edif. Echo Systems, Piso 1.<br>
+                        Punto Fijo, Estado Falcón, Zona Postal 4102.
+                    </p>
+                </td>
+                <td style="width: 45%; text-align: right; vertical-align: top;">
+                    <h3 class="titulo-reporte" style="margin: 0 0 10px 0; color: #2d3748; font-size: 14pt;">COMPROBANTE DE RETENCIÓN DE IVA</h3>
+                    <p class="meta-comprobante" style="margin: 3px 0; font-size: 11pt;"><strong>N° Comprobante:</strong> <span style="font-family: monospace; font-weight: bold; font-size: 12pt;">{{numero_comprobante}}</span></p>
+                    <p class="meta-comprobante" style="margin: 3px 0;"><strong>Fecha de Emisión:</strong> <span>{{fecha_emision}}</span></p>
+                    <p class="meta-comprobante" style="margin: 3px 0;"><strong>Período Fiscal:</strong> <span style="font-family: monospace;">{{periodo_fiscal}}</span></p>
+                </td>
+            </tr>
+        </table>
+
+        <div class="divisor-linea" style="border-bottom: 2px solid #000; margin: 15px 0;"></div>
+
+        <!-- SECCIÓN: DATOS DEL PROVEEDOR RETENIDO -->
+        <div class="seccion-proveedor" style="border: 1px solid #000; padding: 12px; margin-bottom: 25px; border-radius: 4px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11pt;">
+                <tr>
+                    <td style="padding: 4px 0; width: 65%;"><strong>Nombre / Razón Social:</strong> <span>{{proveedor_nombre}}</span></td>
+                    <td style="padding: 4px 0; text-align: right; width: 35%;"><strong>RIF Proveedor:</strong> <span style="font-family: monospace; font-weight: bold;">{{proveedor_rif}}</span></td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="padding: 4px 0; font-size: 10pt; color: #2d3748;">
+                        <strong>Dirección Fiscal:</strong> <span>{{proveedor_direccion}}</span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- CUERPO LEGAL: CUADRO DESGLOSADO DE IMPUESTOS -->
+        <table class="tabla-detalles-fiscales" style="width: 100%; border-collapse: collapse; font-size: 9pt; text-align: center;">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th style="border: 1px solid #000; padding: 8px;">Oper. N°</th>
+                    <th style="border: 1px solid #000; padding: 8px;">Fecha Fac.</th>
+                    <th style="border: 1px solid #000; padding: 8px;">N° Factura</th>
+                    <th style="border: 1px solid #000; padding: 8px;">N° Control</th>
+                    <th style="border: 1px solid #000; padding: 8px;">Total Compra (Bs.)</th>
+                    <th style="border: 1px solid #000; padding: 8px;">Monto Exento</th>
+                    <th style="border: 1px solid #000; padding: 8px;">Base Imponible</th>
+                    <th style="border: 1px solid #000; padding: 8px;">% Alíc.</th>
+                    <th style="border: 1px solid #000; padding: 8px;">Impuesto IVA</th>
+                    <th style="border: 1px solid #000; padding: 8px;">% Ret.</th>
+                    <th style="border: 1px solid #000; padding: 8px;">IVA Retenido (Bs.)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 8px;">001</td>
+                    <td style="border: 1px solid #000; padding: 8px;">{{fecha_emision}}</td>
+                    <td style="border: 1px solid #000; padding: 8px; font-family: monospace;">{{numero_factura}}</td>
+                    <td style="border: 1px solid #000; padding: 8px; font-family: monospace;">{{numero_control}}</td>
+                    <td style="border: 1px solid #000; padding: 8px; text-align: right;">{{monto_total}}</td>
+                    <td style="border: 1px solid #000; padding: 8px; text-align: right;">{{monto_exento}}</td>
+                    <td style="border: 1px solid #000; padding: 8px; text-align: right;">{{base_imponible}}</td>
+                    <td style="border: 1px solid #000; padding: 8px;">{{porcentaje_alicuota}}%</td>
+                    <td style="border: 1px solid #000; padding: 8px; text-align: right;">{{monto_iva}}</td>
+                    <td style="border: 1px solid #000; padding: 8px;">{{porcentaje_retencion}}%</td>
+                    <td style="border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; background-color: #fafafa;">{{monto_retencion}}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- MARCO LEGAL INFORMATIVO REQUERIDO -->
+        <p style="font-size: 8pt; color: #4a5568; line-height: 1.3; margin-top: 25px; text-align: justify;">
+            <em>Ley del Impuesto al Valor Agregado:</em> Comprobante emitido de conformidad con el Artículo 11 de la Ley del IVA y la Providencia Administrativa del SENIAT N° SNAT/2015/0049, que regula el régimen de retenciones en materia de Impuesto al Valor Agregado. El impuesto retenido será enterado al Fisco Nacional según los plazos legales establecidos.
+        </p>
+
+        <!-- PIE DE PÁGINA: FIRMAS AUTORIZADAS Y CONTROL -->
+        <table class="tabla-firmas" style="width: 100%; margin-top: 90px; text-align: center; font-size: 10pt;">
+            <tr>
+                <td style="width: 45%; vertical-align: top;">
+                    <div class="linea-firma" style="border-bottom: 1px solid #000; width: 85%; margin: 0 auto 8px auto;"></div>
+                    <p style="margin: 2px 0;"><strong>ECHO SYSTEMS, C.A.</strong></p>
+                    <p style="margin: 2px 0; font-size: 9pt; color: #4a5568;">Agente de Retención (Firma y Sello)</p>
+                </td>
+                <td style="width: 10%;"></td>
+                <td style="width: 45%; vertical-align: top;">
+                    <div class="linea-firma" style="border-bottom: 1px solid #000; width: 85%; margin: 0 auto 8px auto;"></div>
+                    <p style="margin: 2px 0;"><strong>{{proveedor_firma}}</strong></p>
+                    <p style="margin: 2px 0; font-size: 9pt; color: #4a5568;">Firma del Proveedor / Fecha Recepción</p>
+                </td>
+            </tr>
+        </table>
+        
+    </div>
+
+    <!-- SCRIPT DE AUTO-EJECUCIÓN NATIVA PARA IMPRESIÓN -->
+    <script>
+        // Una vez que el DOM y los archivos CSS estén completamente cargados, dispara la acción
+        window.addEventListener('DOMContentLoaded', () => {
+            // Un retraso pequeño de 300ms asegura la correcta inyección visual de los estilos
+            setTimeout(() => {
+                window.print();
+            }, 300);
+        });
+    </script>
+</body>
+</html>

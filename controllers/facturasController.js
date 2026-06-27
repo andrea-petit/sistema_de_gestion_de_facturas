@@ -10,6 +10,7 @@ const fs = require("fs");
 const util = require("util");
 const cloudinary = require("cloudinary").v2;
 const { extraerDatosFactura } = require("../services/ocrService");
+const path = require("path");
 
 const unlinkAsync = util.promisify(fs.unlink);
 
@@ -54,11 +55,9 @@ const facturasController = {
 
       // 2. Validar credenciales de Cloudinary
       if (!cloudName || !cloudApiKey || !cloudApiSecret) {
-        return res
-          .status(500)
-          .json({
-            error: "Cloudinary no está configurado correctamente en .env",
-          });
+        return res.status(500).json({
+          error: "Cloudinary no está configurado correctamente en .env",
+        });
       }
 
       // 3. Subir imagen de respaldo a Cloudinary
@@ -95,7 +94,7 @@ const facturasController = {
   // =================================================================
   async confirmarYGuardar(req, res) {
     try {
-      // Los datos ya no vienen del OCR, vienen limpios desde los inputs del req.body
+      // 1. Desestructuración de los inputs limpios enviados por el frontend desde los inputs editables
       const {
         proveedor,
         direccion,
@@ -105,43 +104,23 @@ const facturasController = {
         fechaEmision,
         montoTotal,
         categoria,
-        img_url, // Recuperamos la URL que guardamos en el paso 1
+        img_url,
+        porcentaje_alicuota,
+        montoExento,
+        montoAfectoIva,
+        montoIva,
+        porcentaje_retencion,
       } = req.body;
 
+      // Validaciones obligatorias de negocio a nivel de transporte/petición
       if (!proveedor || !rifEmisor || !nroFactura) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "Proveedor, RIF y Número de Factura son obligatorios para el Libro de Compras.",
-          });
-      }
-
-      // 1. Gestión Automática de Proveedores
-      let proveedorDb = await proveedoresModel.getProveedorByNameOrRif(
-        proveedor,
-        rifEmisor,
-      );
-
-      if (!proveedorDb) {
-        const tipo_documento = rifEmisor ? rifEmisor[0].toUpperCase() : "J";
-        proveedorDb = await proveedoresModel.createProveedor({
-          tipo_documento,
-          rif: rifEmisor,
-          razon_social: proveedor,
-          direccion: direccion || null,
-          telefono: null,
-          tipo_contribuyente: "Ordinario",
+        return res.status(400).json({
+          error:
+            "Proveedor, RIF y Número de Factura son obligatorios para el Libro de Compras.",
         });
       }
 
-      // 2. Gestión de Categoría con el NLP Manager
-      const categoriaId = await categoriasModel.getOrCreateCategoryId(
-        categoria || "Sin categoría",
-      );
-
-      // 3. Preparación del objeto estructurado para la base de datos
-      // Normalizamos montos admitiendo tanto strings con separadores ("2.961,45") como números
+      // 2. Normalización Monetaria de los strings/números provenientes del cliente
       function parseMonetary(value) {
         if (value === undefined || value === null) return 0.0;
         if (typeof value === "number") return Number(Number(value).toFixed(2));
@@ -162,22 +141,59 @@ const facturasController = {
         return Number.isNaN(parsed) ? 0.0 : Number(parsed.toFixed(2));
       }
 
-      const monto_total_norm = parseMonetary(montoTotal || req.body.montoTotal);
-      const monto_exento_norm = parseMonetary(req.body.montoExento);
-      const monto_afecto_norm = parseMonetary(req.body.montoAfectoIva);
-      const monto_iva_norm = parseMonetary(req.body.montoIva);
+      const monto_total_norm = parseMonetary(montoTotal);
+      const monto_exento_norm = parseMonetary(montoExento);
+      const monto_afecto_norm = parseMonetary(montoAfectoIva);
+      const monto_iva_norm = parseMonetary(montoIva);
       const porcentaje_alicuota_norm = Number.isFinite(
-        Number(req.body.porcentaje_alicuota),
+        Number(porcentaje_alicuota),
       )
-        ? Number(req.body.porcentaje_alicuota)
-        : 0.0;
+        ? Number(porcentaje_alicuota)
+        : 16.0;
       const porcentaje_retencion_norm = Number.isFinite(
-        Number(req.body.porcentaje_retencion),
+        Number(porcentaje_retencion),
       )
-        ? Number(req.body.porcentaje_retencion)
+        ? Number(porcentaje_retencion)
         : 0.0;
 
-      const facturaData = {
+      // 3. Gestión Automática de Proveedores (Servicio intermedio)
+      let proveedorDb = await proveedoresModel.getProveedorByNameOrRif(
+        proveedor,
+        rifEmisor,
+      );
+
+      if (!proveedorDb) {
+        const tipo_documento = rifEmisor ? rifEmisor[0].toUpperCase() : "J";
+        proveedorDb = await proveedoresModel.createProveedor({
+          tipo_documento,
+          rif: rifEmisor,
+          razon_social: proveedor,
+          direccion: direccion || null,
+          telefono: null,
+          tipo_contribuyente: "Ordinario",
+        });
+      }
+
+      // 4. Protección contra duplicados en el Libro de Compras usando el método del modelo
+      const facturaExistente =
+        await facturaModel.getFacturaByProveedorAndNumero(
+          proveedorDb.id,
+          nroFactura,
+        );
+      if (facturaExistente) {
+        return res.status(409).json({
+          error:
+            "Ya existe esta factura registrada para el proveedor indicado.",
+        });
+      }
+
+      // 5. Gestión de Categoría con el NLP Manager
+      const categoriaId = await categoriasModel.getOrCreateCategoryId(
+        categoria || "Sin categoría",
+      );
+
+      // 6. Preparar el DTO (Data Transfer Object) unificado estructurado para el modelo
+      const facturaPayload = {
         proveedor_id: proveedorDb.id,
         fecha_emision: fechaEmision,
         numero_factura: nroFactura,
@@ -187,68 +203,66 @@ const facturasController = {
         monto_afecto_iva: monto_afecto_norm,
         monto_iva: monto_iva_norm,
         porcentaje_alicuota: porcentaje_alicuota_norm,
-        categoria: categoriaId,
         porcentaje_retencion: porcentaje_retencion_norm,
-        comprobante_retencion: req.body.comprobante_retencion || null,
-        img_url: img_url,
+        categoria: categoriaId,
+        img_url: img_url || null,
+        tipo_documento: "factura",
       };
 
-      // Log de diagnóstico para identificar inconsistencias como las que reportaste
-      console.log("[facturasController] Payload normalizado recibido:", {
-        monto_total: facturaData.monto_total,
-        monto_exento: facturaData.monto_exento,
-        monto_afecto_iva: facturaData.monto_afecto_iva,
-        monto_iva: facturaData.monto_iva,
-        porcentaje_alicuota: facturaData.porcentaje_alicuota,
-        porcentaje_retencion: facturaData.porcentaje_retencion,
-      });
-
-      // Recalcular impuestos en backend para asegurar consistencia
-      const impuestoCalc = facturaModel.calculateImpuestos(facturaData);
       console.log(
-        "[facturasController] Impuestos calculados en backend:",
-        impuestoCalc,
+        "[SGAF Controller] Delegando transacción atómica al Modelo:",
+        {
+          numero_factura: facturaPayload.numero_factura,
+          monto_total: facturaPayload.monto_total,
+        },
       );
 
-      // 4. Protección contra duplicados en el Libro de Compras
-      const facturaExistente =
-        await facturaModel.getFacturaByProveedorAndNumero(
-          facturaData.proveedor_id,
-          facturaData.numero_factura,
-        );
-      if (facturaExistente) {
-        return res
-          .status(409)
-          .json({
-            error:
-              "Ya existe esta factura registrada para el proveedor indicado.",
-          });
-      }
+      // ====================================================================
+      // DELEGACIÓN ABSOLUTA AL MODELO TRANSACCIONAL
+      // ====================================================================
+      const nuevaCompra =
+        await facturaModel.createFacturaCompleta(facturaPayload);
 
-      // 5. Inserción final
-      const nuevaFactura = await facturaModel.createFactura(facturaData);
-
-      // 6. Registro de Auditoría en el Historial
+      // 7. Registro de Auditoría en el Historial (Post-guardado exitoso)
       try {
         const usuarioId = req.user && req.user.id ? req.user.id : null;
+        const direccionIp =
+          req.ip || req.headers["x-forwarded-for"] || "127.0.0.1";
+
         await historialModel.addHistorial({
           usuario_id: usuarioId,
-          tabla_afectada: "facturas",
-          registro_id: nuevaFactura?.id || null,
+          tabla_afectada: "compras",
+          registro_id: nuevaCompra?.id || null,
           accion: "CREATE",
           valor_anterior: null,
-          valor_nuevo: JSON.stringify(facturaData),
+          valor_nuevo: JSON.stringify({
+            proveedor_id: facturaPayload.proveedor_id,
+            numero_factura: facturaPayload.numero_factura,
+            monto_total: facturaPayload.monto_total,
+            comprobante_emitido: nuevaCompra.numero_comprobante || "Ninguno",
+          }),
+          direccion_ip: direccionIp,
         });
       } catch (histError) {
-        console.error("Error guardando historial:", histError);
+        console.error(
+          "[SGAF Historial Warning] Error guardando log de auditoría:",
+          histError,
+        );
+        // No bloqueamos la respuesta HTTP si el registro secundario de auditoría falla
       }
 
+      // 8. Respuesta Exitosa al Frontend
       return res.status(200).json({
         mensaje:
           "Factura verificada e insertada en el Libro de Compras con éxito",
-        id: nuevaFactura?.id,
+        id: nuevaCompra?.id,
+        comprobante: nuevaCompra.numero_comprobante, // Retorna el string legal ("20260600000001") o null si no hubo retención
       });
     } catch (error) {
+      console.error(
+        "[SGAF Controller Error] Falló el flujo de confirmación:",
+        error,
+      );
       return res.status(500).json({ error: error.message });
     }
   },
@@ -263,11 +277,9 @@ const facturasController = {
         porcentajeRetencion < 1 ||
         porcentajeRetencion > 5
       ) {
-        return res
-          .status(400)
-          .json({
-            error: "El porcentaje de retención debe ser un número entre 1 y 5",
-          });
+        return res.status(400).json({
+          error: "El porcentaje de retención debe ser un número entre 1 y 5",
+        });
       }
 
       const nuevaRetencion = await facturaModel.createRetencionFromFactura(
@@ -381,12 +393,10 @@ const facturasController = {
       console.log("-----------------------------------------");
 
       if (!fecha) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "El parámetro fecha es requerido para realizar la consulta fiscal.",
-          });
+        return res.status(400).json({
+          error:
+            "El parámetro fecha es requerido para realizar la consulta fiscal.",
+        });
       }
 
       console.log(
@@ -456,6 +466,126 @@ const facturasController = {
         error,
       );
       return res.status(500).json({ error: error.message });
+    }
+  },
+
+  async renderComprobante(req, res) {
+    try {
+      const { id } = req.params;
+
+      // 1. Buscar la información completa cruzando las tablas
+      // Cambiamos el nombre a 'factura' para que haga match perfecto con los .replace() de abajo
+      const factura = await facturaModel.getComprobanteDataForReport(id);
+
+      if (!factura) {
+        return res.status(404).send("Comprobante no encontrado.");
+      }
+
+      // 2. Leer de forma asíncrona el archivo HTML desde tu carpeta de plantillas
+      const templatePath = path.join(
+        __dirname,
+        "../templates/comprobante_iva.html",
+      );
+      let htmlContent = await fs.promises.readFile(templatePath, "utf8");
+
+      // 3. Reemplazar los marcadores por los datos reales de la Base de Datos
+      htmlContent = htmlContent
+        // Encabezado y Metadatos
+        .replace(/{{numero_comprobante}}/g, factura.comprobante || "---")
+        .replace(
+          /{{fecha_emision}}/g,
+          factura.fechaEmision
+            ? new Date(factura.fechaEmision).toLocaleDateString("es-VE")
+            : "---",
+        )
+        .replace(/{{periodo_fiscal}}/g, factura.periodoFiscal || "---")
+
+        // Datos de la Empresa (Agente de Retención) dinámicos
+        .replace(
+          /ECHO SYSTEMS, C.A./g,
+          factura.empresaNombre || "ECHO SYSTEMS, C.A.",
+        )
+        .replace(/J-50478291-0/g, factura.empresaRif || "---")
+        .replace(
+          /Av. Ollarvazu, Edif. Echo Systems, Piso 1.<br>\s*Punto Fijo, Estado Falcón, Zona Postal 4102./g,
+          factura.empresaDireccion || "---",
+        )
+
+        // Datos del Proveedor (Retenido)
+        .replace(/{{proveedor_nombre}}/g, factura.proveedor || "---")
+        .replace(/{{proveedor_rif}}/g, factura.rifEmisor || "---")
+        .replace(
+          /{{proveedor_direccion}}/g,
+          factura.direccion || "No registrada",
+        )
+        .replace(/{{proveedor_firma}}/g, factura.proveedor || "Proveedor")
+
+        // Datos Específicos de la Factura y Tabla Fiscal
+        .replace(/{{numero_factura}}/g, factura.nroFactura || "---")
+        .replace(/{{numero_control}}/g, factura.nroControl || "---")
+
+        // Formateo de los montos numéricos (Bs.) utilizando convención local de comas y puntos
+        .replace(
+          /{{monto_total}}/g,
+          factura.montoTotal
+            ? parseFloat(factura.montoTotal).toLocaleString("es-VE", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })
+            : "0.00",
+        )
+        .replace(
+          /{{monto_exento}}/g,
+          factura.montoExento
+            ? parseFloat(factura.montoExento).toLocaleString("es-VE", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })
+            : "0.00",
+        )
+        .replace(
+          /{{base_imponible}}/g,
+          factura.montoAfectoIva
+            ? parseFloat(factura.montoAfectoIva).toLocaleString("es-VE", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })
+            : "0.00",
+        )
+        .replace(
+          /{{porcentaje_alicuota}}/g,
+          parseInt(factura.porcentajeAlicuota) || "0",
+        )
+        .replace(
+          /{{monto_iva}}/g,
+          factura.montoIva
+            ? parseFloat(factura.montoIva).toLocaleString("es-VE", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })
+            : "0.00",
+        )
+        .replace(
+          /{{porcentaje_retencion}}/g,
+          parseInt(factura.porcentajeRetencion) || "0",
+        )
+        .replace(
+          /{{monto_retencion}}/g,
+          factura.montoRetencion
+            ? parseFloat(factura.montoRetencion).toLocaleString("es-VE", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })
+            : "0.00",
+        );
+
+      // 4. Enviar el HTML procesado directamente al navegador
+      return res.status(200).send(htmlContent);
+    } catch (error) {
+      console.error("Error al renderizar el reporte:", error);
+      return res
+        .status(500)
+        .send("Error interno al generar la vista de impresión.");
     }
   },
 };
