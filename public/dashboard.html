@@ -399,8 +399,31 @@
                 </div>
             </div>
 
-            <div id="view-comprobante-retencion" class="view-panel"><div class="placeholder-view"><h3>Módulo: Buscar Comprobante de Retención</h3><p>Cálculos de retención del IVA.</p></div></div>
-            
+            <div id="view-comprobante-retencion" class="view-panel">
+                <div class="container-box">
+                    <h2>Consulta Individual de Comprobantes</h2>
+                    <p class="description">Ingrese el código único del comprobante de retención para generar la vista oficial de impresión del SENIAT.</p>
+                    
+                    <form id="formConsultarComprobante">
+                        <div class="form-group">
+                            <label for="comprobanteIdInput">Identificador o Código del Comprobante:</label>
+                            <input 
+                                type="text" 
+                                id="comprobanteIdInput" 
+                                placeholder="Ej: páguelo o pegue el código UUID del comprobante..." 
+                                required
+                            >
+                        </div>
+
+                        <div class="form-actions-bar" style="margin-top: 25px; display: flex; justify-content: flex-end;">
+                            <button type="button" id="btnConsultarComprobante" class="btn" style="background-color: #1a365d; color: white; display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-print"></i> Renderizar Comprobante
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+                        
             <div id="view-ver-proveedores" class="view-panel">
                 <div class="container-box container-box--xwide">
                     <h2>Directorio de Proveedores Registrados</h2>

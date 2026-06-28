@@ -1212,6 +1212,141 @@ const facturasController = {
         .send("Error interno al procesar la relación de retenciones.");
     }
   },
+
+  async renderComprobanteIndividual(req, res) {
+    try {
+      const { id } = req.params;
+
+      if (!id)
+        return res.status(400).send("Falta el identificador del comprobante.");
+
+      const lineas = await facturaModel.getComprobanteIndividual(id);
+
+      // Si el array viene vacío, detenemos la ejecución
+      if (!lineas || lineas.length === 0) {
+        return res
+          .status(404)
+          .send(
+            "El comprobante de retención no existe o no tiene facturas activas asociadas.",
+          );
+      }
+
+      // 🌟 CLAVE 1: Extraer los datos maestros del primer registro del array [0]
+      const maestro = lineas[0];
+
+      // 2. Leer de forma asíncrona el archivo HTML desde tu carpeta de plantillas
+      const templatePath = path.join(
+        __dirname,
+        "../templates/comprobante_iva.html",
+      );
+      let htmlContent = await fs.promises.readFile(templatePath, "utf8");
+
+      // 🌟 CLAVE 2: Construir dinámicamente las filas de la tabla si hay más de una factura
+      let filasHtml = "";
+      let acumuladoTotal = 0,
+        acumuladoBase = 0,
+        acumuladoIva = 0,
+        acumuladoRetenido = 0;
+
+      lineas.forEach((item, index) => {
+        acumuladoTotal += parseFloat(item.montoTotal || 0);
+        acumuladoBase += parseFloat(item.baseImponible || 0);
+        acumuladoIva += parseFloat(item.montoIva || 0);
+        acumuladoRetenido += parseFloat(item.montoRetencion || 0);
+
+        // Si tu plantilla usa marcadores dentro de un bucle de JS, creamos el renglón.
+        // Si tu plantilla es estática y solo espera un bloque, usaremos los totales acumulados abajo.
+      });
+
+      // 3. Reemplazar los marcadores utilizando los datos extraídos del 'maestro' o del acumulado
+      htmlContent = htmlContent
+        // Encabezado y Metadatos (Usando nombres reales devueltos por el Modelo en CamelCase)
+        .replace(/{{numero_comprobante}}/g, maestro.numeroComprobante || "---")
+        .replace(
+          /{{fecha_emision}}/g,
+          maestro.fechaEmisionComprobante
+            ? new Date(maestro.fechaEmisionComprobante).toLocaleDateString(
+                "es-VE",
+              )
+            : "---",
+        )
+        .replace(/{{periodo_fiscal}}/g, maestro.periodoFiscal || "---")
+
+        // Datos de la Empresa (Agente de Retención) dinámicos
+        .replace(
+          /ECHO SYSTEMS, C.A./g,
+          maestro.empresaNombre || "ECHO SYSTEMS, C.A.",
+        )
+        .replace(/J-50478291-0/g, maestro.empresaRif || "---")
+        .replace(
+          /Av. Ollarvazu, Edif. Echo Systems, Piso 1.<br>\s*Punto Fijo, Estado Falcón, Zona Postal 4102./g,
+          maestro.empresaDireccion || "---",
+        )
+
+        // Datos del Proveedor (Retenido)
+        .replace(/{{proveedor_nombre}}/g, maestro.proveedorNombre || "---")
+        .replace(/{{proveedor_rif}}/g, maestro.proveedorRif || "---")
+        .replace(
+          /{{proveedor_direccion}}/g,
+          maestro.proveedorDireccion || "No registrada",
+        )
+        .replace(/{{proveedor_firma}}/g, maestro.proveedorNombre || "Proveedor")
+
+        // Datos Específicos de las Facturas (Si la plantilla maneja una sola o los totales del comprobante)
+        .replace(/{{numero_factura}}/g, maestro.nroFactura || "---")
+        .replace(/{{numero_control}}/g, maestro.nroControl || "---")
+
+        // Formateo de los montos numéricos (Bs.) utilizando convención local
+        .replace(
+          /{{monto_total}}/g,
+          acumuladoTotal.toLocaleString("es-VE", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }),
+        )
+        .replace(
+          /{{monto_exento}}/g,
+          "0.00", // Si no se maneja en el query, dejamos por defecto el formato fiscal
+        )
+        .replace(
+          /{{base_imponible}}/g,
+          acumuladoBase.toLocaleString("es-VE", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }),
+        )
+        .replace(
+          /{{porcentaje_alicuota}}/g,
+          parseInt(maestro.porcentajeAlicuota) || "0",
+        )
+        .replace(
+          /{{monto_iva}}/g,
+          acumuladoIva.toLocaleString("es-VE", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }),
+        )
+        .replace(
+          /{{porcentaje_retencion}}/g,
+          parseInt(maestro.porcentajeRetencion) || "0",
+        )
+        .replace(
+          /{{monto_retencion}}/g,
+          acumuladoRetenido.toLocaleString("es-VE", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }),
+        );
+
+      // 4. Enviar el HTML procesado directamente al navegador
+      return res.status(200).send(htmlContent);
+    } catch (error) {
+      console.error("Error al renderizar el reporte:", error);
+      return res
+        .status(500)
+        .send("Error interno al generar la vista de impresión.");
+    }
+  },
 };
 
 module.exports = facturasController;

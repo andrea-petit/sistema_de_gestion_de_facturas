@@ -15,6 +15,7 @@ router.get('/facturas', authMiddleware, facturasController.getFacturasByFechaEmi
 router.get("/facturas/comprobante/:id", facturasController.renderComprobante);
 router.get("/facturas/reporte-libro", facturasController.renderLibroCompras);
 router.get('/facturas/reporte-retenciones', facturasController.renderRelacionRetenciones);
+router.get('/facturas/comprobantes/:id/render', facturasController.renderComprobanteIndividual);
 
 
 module.exports = router;

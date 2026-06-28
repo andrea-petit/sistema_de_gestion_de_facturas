@@ -617,6 +617,61 @@ const facturaModel = {
     const { rows } = await pool.query(query, [fechaDesde, fechaHasta]);
     return rows;
   },
+
+  getComprobanteIndividual(criterioBusqueda) {
+    return new Promise((resolve, reject) => {
+      const esUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          criterioBusqueda.trim(),
+        );
+
+      const condicionWhere = esUuid
+        ? `WHERE cr.id = $1 AND c.estatus = 'activa'`
+        : `WHERE cr.numero_comprobante = $1 AND c.estatus = 'activa'`;
+
+      const sql = `
+        SELECT 
+          cr.id AS "comprobanteId",
+          cr.numero_comprobante AS "numeroComprobante",
+          cr.fecha_emision AS "fechaEmisionComprobante",
+          cr.periodo_fiscal AS "periodoFiscal",
+          
+          p.tipo_documento AS "proveedorTipoDoc",
+          p.tipo_documento || '-' || p.rif AS "proveedorRif",
+          p.razon_social AS "proveedorNombre",
+          p.direccion AS "proveedorDireccion",
+          
+          c.fecha_emision AS "fechaFactura",
+          c.numero_factura AS "nroFactura",
+          c.numero_control AS "nroControl",
+          c.monto_total AS "montoTotal",
+          ci.base_imponible AS "baseImponible",
+          ci.porcentaje_alicuota AS "porcentajeAlicuota",
+          ci.monto_iva AS "montoIva",
+          ci.porcentaje_retencion AS "porcentajeRetencion",
+          ci.monto_retencion AS "montoRetencion",
+          
+          e.nombre AS "empresaNombre",
+          e.tipo_documento AS "empresaTipoDoc",
+          e.rif AS "empresaRif",
+          e.direccion AS "empresaDireccion"
+          
+        FROM public.comprobante_retencion cr
+        INNER JOIN public.proveedores p ON cr.proveedor_id = p.id
+        INNER JOIN public.compras c ON c.comprobante_retencion = cr.id
+        INNER JOIN public.compra_impuestos ci ON ci.compra_id = c.id
+        CROSS JOIN public.empresa e
+        
+        ${condicionWhere}
+        ORDER BY c.fecha_emision ASC, c.numero_factura ASC;
+      `;
+
+      pool.query(sql, [criterioBusqueda.trim()], (error, results) => {
+        if (error) reject(error);
+        else resolve(results.rows);
+      });
+    });
+  },
 };
 
 module.exports = facturaModel;

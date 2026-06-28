@@ -2,4 +2,16 @@
 
 #view-comprobante-retencion {
   font-family: var(--font-body);
+  animation: fadeInComprobante 0.25s ease-in-out
+}
+
+
+#view-comprobante-individual input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@keyframes fadeInComprobante {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
 }

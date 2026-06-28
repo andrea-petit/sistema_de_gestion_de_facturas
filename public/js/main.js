@@ -8,6 +8,7 @@ import { initPerfilModulo } from './modulos/perfilEmpresaModule.js';
 import { initCategoriasModulo } from './modulos/categoriasModule.js';
 import { initEditarFacturaModulo } from './modulos/editarFacturaModule.js';
 import { initReportes } from './modulos/generarReporteModule.js';
+import { initComprobantes } from './modulos/comprobanteModule.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // --- Session guard: redirect to login if session is no longer valid ---
@@ -45,6 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initCategoriasModulo();
     initEditarFacturaModulo();
     initReportes();
+    initComprobantes();
 });
 
 
