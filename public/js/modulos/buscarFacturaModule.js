@@ -95,7 +95,7 @@ export function initBuscarModulo() {
             });
 
         } catch (error) {
-            listaCuerpo.innerHTML = `<tr><td colspan="3" style="padding: 20px; text-align: center; color: #ef4444;">❌ Error: ${error.message}</td></tr>`;
+            listaCuerpo.innerHTML = `<tr><td colspan="3" style="padding: 20px; text-align: center; color: #ef4444;">Error: ${error.message}</td></tr>`;
         } finally {
             btnBuscar.disabled = false;
         }

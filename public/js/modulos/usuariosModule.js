@@ -2,7 +2,6 @@ let modoFormUsuario = 'REGISTRO';
 
 export function initUsuariosModulo() {
     let operadorRol = localStorage.getItem('userRol') || sessionStorage.getItem('userRol');
-    console.log("[SGAF Seguridad] Inicializando módulo con rol:", operadorRol);
 
     if (operadorRol === 'empleado') {
         const menuUser = document.getElementById('menuItemUsuarios');

@@ -137,7 +137,9 @@ const proveedoresController = {
             console.error('Error editing proveedor:', error);
             return res.status(500).json({ ok: false, msg: 'Error interno en el procesamiento unificado.' });
         }
-    }
+    },
+
+
 };
 
 module.exports = proveedoresController;

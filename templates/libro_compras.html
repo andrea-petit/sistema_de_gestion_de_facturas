@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Libro de Compras - {{mes}}/{{anio}}</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 9pt; margin: 10px; color: #333; }
+        .encabezado { width: 100%; margin-bottom: 20px; }
+        .titulo { text-align: center; text-transform: uppercase; font-size: 14pt; font-weight: bold; margin: 0; color: #1a365d; }
+        .subtitulo { text-align: center; font-size: 10pt; margin: 5px 0 0 0; }
+        
+        table.tabla-libro { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 8pt; }
+        table.tabla-libro th { background-color: #1a365d; color: white; padding: 6px; border: 1px solid #4a5568; text-transform: uppercase; font-size: 7.5pt; }
+        table.tabla-libro td { padding: 5px; border: 1px solid #cbd5e0; text-align: center; }
+        table.tabla-libro tr:nth-child(even) { background-color: #f7fafc; }
+        
+        .fila-totales { background-color: #e2e8f0 !important; font-weight: bold; }
+        .fila-totales td { border-top: 2px solid #1a365d; border-bottom: 2px solid #1a365d; }
+        
+        /* Ajuste de visualización horizontal e impresión optimizada */
+        @page { size: landscape; margin: 0.5cm; }
+        @media print {
+            .no-print { display: none !important; }
+            body { margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print" style="text-align: right; padding: 8px; background: #edf2f7; margin-bottom: 15px; border-radius: 4px;">
+        <small style="color:#718096; margin-right: 10px;">Modo previsualización de PDF contable</small>
+        <button onclick="window.print()" style="padding: 6px 12px; background: #3182ce; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+            Generar PDF / Imprimir
+        </button>
+    </div>
+
+    <table class="encabezado">
+        <tr>
+            <td>
+                <strong>EMPRESA:</strong> {{empresaNombre}}<br>
+                <strong>RIF:</strong> {{empresaRif}}<br>
+                <strong>DIRECCION:</strong> {{empresaDireccion}}
+            </td>
+            <td style="text-align: right; vertical-align: top;">
+                <strong>MES:</strong> {{mes}} / <strong>AÑO:</strong> {{anio}}
+            </td>
+        </tr>
+    </table>
+
+    <h1 class="titulo">Libro de Compras</h1>
+    <p class="subtitulo">Cumplimiento del Artículo 56 de la Ley del IVA</p>
+
+    <table class="tabla-libro">
+        <thead>
+            <tr>
+                <th>Op.</th>
+                <th>Fecha</th>
+                <th>RIF Prov.</th>
+                <th>Nombre / Razón Social</th>
+                <th>N° Factura</th>
+                <th>N° Control</th>
+                <th>Total Compra</th>
+                <th>Monto Exento</th>
+                <th>Base Imponible</th>
+                <th>% Alíc.</th>
+                <th>Monto IVA</th>
+                <th>N° Comprobante</th>
+                <th>Retención IVA</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{filasCompras}}
+            <tr class="fila-totales">
+                <td colspan="6" style="text-align: right;">TOTALES GENERALES:</td>
+                <td style="text-align: right;">{{totalGeneral}}</td>
+                <td style="text-align: right;">-</td>
+                <td style="text-align: right;">{{totalBase}}</td>
+                <td>-</td>
+                <td style="text-align: right;">{{totalIva}}</td>
+                <td>-</td>
+                <td style="text-align: right;">{{totalRetenido}}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        // Auto-invocar impresión para simular la bajada directa a PDF al abrirse mediante window.open
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => { window.print(); }, 400);
+        });
+    </script>
+</body>
+</html>

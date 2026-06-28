@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Relación de Retenciones de IVA</title>
+  <style>
+    body { font-family: 'Arial', sans-serif; margin: 20px; color: #333; font-size: 11px; }
+    .header-table { width: 100%; margin-bottom: 25px; }
+    .title { text-align: center; font-size: 14px; font-weight: bold; color: #1A365D; margin: 15px 0; }
+    table.data-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    table.data-table th { background-color: #1A365D; color: white; padding: 6px; border: 1px solid #ddd; font-size: 10px; }
+    table.data-table td { padding: 6px; border: 1px solid #ddd; vertical-align: middle; }
+    .total-row { font-weight: bold; background-color: #f8fafc; }
+    .total-row td { border-top: 1px solid #000; border-bottom: 4px double #000; }
+  </style>
+</head>
+<body>
+  <table class="header-table">
+    <tr>
+      <td><strong>EMPRESA:</strong> {{empresaNombre}}<br><strong>RIF:</strong> {{empresaRif}}</td>
+      <td style="text-align: right;"><strong>Fecha de Generación:</strong> <span id="fecha-actual"></span></td>
+    </tr>
+  </table>
+  
+  <div class="title">RELACIÓN DE RETENCIONES DE IVA - {{quincena}}° QUINCENA DE {{mes}}/{{anio}}</div>
+  
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>N°</th>
+        <th>Fecha</th>
+        <th>RIF</th>
+        <th>Razón Social</th>
+        <th>Factura</th>
+        <th>Control</th>
+        <th>Comprobante</th>
+        <th>Total (Bs.)</th>
+        <th>Base Imp.</th>
+        <th>Monto IVA</th>
+        <th>% Ret</th>
+        <th>IVA Retenido</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{filasRetenciones}}
+      <tr class="total-row">
+        <td colspan="7" style="text-align: right;">TOTALES GENERALES:</td>
+        <td style="text-align: right;">{{totalGeneral}}</td>
+        <td style="text-align: right;">{{totalBase}}</td>
+        <td style="text-align: right;">{{totalIva}}</td>
+        <td></td>
+        <td style="text-align: right;">{{totalRetenido}}</td>
+      </tr>
+    </tbody>
+  </table>
+  
+  <script>
+    document.getElementById('fecha-actual').innerText = new Date().toLocaleDateString("es-VE");
+    window.onload = function() { window.print(); }
+  </script>
+</body>
+</html>

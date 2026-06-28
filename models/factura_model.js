@@ -416,8 +416,6 @@ const facturaModel = {
     return res.rows; // Devuelve todos los datos desglosados listos para re-poblar el HTML de impresión
   },
 
-  // Dentro de tu facturaModel.js
-
   async getComprobanteDataForReport(facturaId) {
     try {
       const query = `
@@ -473,6 +471,151 @@ const facturaModel = {
       );
       throw error;
     }
+  },
+
+  // 1. CONSULTA PARA EL LIBRO DE COMPRAS
+  async getLibroCompras(mes, anio) {
+    try {
+      const query = `
+              SELECT 
+                  c.fecha_emision AS "fechaEmision",
+                  c.fecha_registro AS "fechaRegistro",
+                  p.tipo_documento || '-' || p.rif AS "rifProveedor",
+                  p.razon_social AS "proveedorNombre",
+                  c.numero_factura AS "nroFactura",
+                  c.numero_control AS "nroControl",
+                  c.tipo_documento AS "tipoDocumento",
+                  c.factura_afectada AS "facturaAfectada",
+                  c.monto_total AS "montoTotal",
+
+                  -- Datos de tu Empresa (Agente de Retención)
+                  e.nombre AS "empresaNombre",
+                  e.tipo_documento || '-' || e.rif AS "empresaRif",
+                  e.direccion AS "empresaDireccion", -- 🌟 Colocada la coma que faltaba
+                  
+                  COALESCE(ci.base_imponible, c.monto_total) AS "baseImponible",
+                  COALESCE(ci.porcentaje_alicuota, 0) AS "porcentajeAlicuota",
+                  COALESCE(ci.monto_iva, 0) AS "montoIva",
+                  
+                  -- FÓRMULA CONTROLADA PARA EL MONTO EXENTO:
+                  CASE 
+                      WHEN COALESCE(ci.porcentaje_alicuota, 0) = 0 THEN c.monto_total
+                      ELSE 
+                          GREATEST(0, ROUND((c.monto_total - COALESCE(ci.base_imponible, 0) - COALESCE(ci.monto_iva, 0)), 2))
+                  END AS "montoExento",
+                  
+                  COALESCE(ci.monto_retencion, 0) AS "montoRetencion",
+                  cr.numero_comprobante AS "nroComprobante"
+              FROM public.compras c
+              INNER JOIN public.proveedores p ON c.proveedor_id = p.id
+              LEFT JOIN public.compra_impuestos ci ON c.id = ci.compra_id
+              LEFT JOIN public.comprobante_retencion cr ON c.comprobante_retencion = cr.id
+              CROSS JOIN public.empresa e -- 🌟 Movido aquí arriba junto a los demás JOINs
+              WHERE EXTRACT(MONTH FROM c.fecha_emision) = $1 
+                AND EXTRACT(YEAR FROM c.fecha_emision) = $2
+              ORDER BY c.fecha_emision ASC, c.numero_factura ASC;
+          `;
+      const resultado = await pool.query(query, [mes, anio]);
+      return resultado.rows;
+    } catch (error) {
+      console.error("[SGAF Model] Error en getLibroCompras:", error);
+      throw error;
+    }
+  },
+
+  // 2. CONSULTA PARA REPORTE DE RETENCIONES POR PERÍODO (QUINCENAL)
+  async getRetencionesPorPeriodo(mes, anio, quincena) {
+    try {
+      // Definimos el rango de días según la quincena
+      const diaInicio = quincena == 1 ? 1 : 16;
+      const diaFin = quincena == 1 ? 15 : 31; // Postgres maneja el extremo superior bien si el mes tiene menos días
+
+      const query = `
+              SELECT 
+                  cr.numero_comprobante AS "nroComprobante",
+                  cr.fecha_emision AS "fechaComprobante",
+                  c.numero_factura AS "nroFactura",
+                  c.numero_control AS "nroControl",
+                  c.fecha_emision AS "fechaFactura",
+                  c.monto_total AS "montoTotal",
+                  ci.base_imponible AS "baseImponible",
+                  ci.monto_iva AS "montoIva",
+                  ci.porcentaje_retencion AS "porcentajeRetencion",
+                  ci.monto_retencion AS "montoRetencion",
+                  p.razon_social AS "proveedorNombre",
+                  p.tipo_documento || '-' || p.id AS "rifProveedor"
+              FROM public.comprobante_retencion cr
+              INNER JOIN public.compras c ON c.comprobante_retencion = cr.id
+              INNER JOIN public.compra_impuestos ci ON c.id = ci.compra_id
+              INNER JOIN public.proveedores p ON c.proveedor_id = p.id
+              WHERE EXTRACT(MONTH FROM cr.fecha_emision) = $1
+                AND EXTRACT(YEAR FROM cr.fecha_emision) = $2
+                AND EXTRACT(DAY FROM cr.fecha_emision) BETWEEN $3 AND $4
+              ORDER BY cr.numero_comprobante ASC;
+          `;
+      const resultado = await pool.query(query, [mes, anio, diaInicio, diaFin]);
+      return resultado.rows;
+    } catch (error) {
+      console.error("[SGAF Model] Error en getRetencionesPorPeriodo:", error);
+      throw error;
+    }
+  },
+
+  obtenerRetencionesPorQuincena: async (mes, anio, quincena) => {
+    let diaInicio = 1;
+    let diaFin = 15;
+
+    if (parseInt(quincena) === 2) {
+      diaInicio = 16;
+      // Obtiene el último día del mes dinámicamente (28, 29, 30, 31)
+      diaFin = new Date(parseInt(anio), parseInt(mes), 0).getDate();
+    }
+
+    // Formateamos las fechas en formato ISO puro YYYY-MM-DD para pasarlas de manera segura a la base de datos
+    const fechaDesde = `${anio}-${String(mes).padStart(2, "0")}-${String(diaInicio).padStart(2, "0")}`;
+    const fechaHasta = `${anio}-${String(mes).padStart(2, "0")}-${String(diaFin).padStart(2, "0")}`;
+
+    const query = `
+      SELECT 
+        -- Datos de la Compra / Factura
+        c.id AS "id",
+        c.fecha_emision AS "fechaEmision",
+        c.numero_factura AS "nroFactura",
+        c.numero_control AS "nroControl",
+        c.monto_total AS "montoTotal",
+        
+        -- Datos del Proveedor
+        p.tipo_documento || '-' || p.rif AS "rifProveedor", -- O la columna donde guardes el RIF físico si aplica
+        p.razon_social AS "proveedorNombre",
+        
+        -- Datos de Impuestos y Retenciones (Tabla Relacionada)
+        ci.base_imponible AS "baseImponible",
+        ci.monto_iva AS "montoIva",
+        ci.porcentaje_retencion AS "porcentajeAlicuota", -- Mapeado para calcular el % Ret.
+        ci.monto_retencion AS "montoRetencion",
+        
+        -- Datos del Comprobante de Retención Emitido
+        cr.numero_comprobante AS "nroComprobante",
+        
+        -- Datos de la Empresa (Extraídos dinámicamente vía Cross Join para el encabezado)
+        e.nombre AS "empresaNombre",
+        e.tipo_documento || '-' || e.rif AS "empresaRif"
+
+      FROM public.compras c
+      INNER JOIN public.proveedores p ON c.proveedor_id = p.id
+      INNER JOIN public.compra_impuestos ci ON ci.compra_id = c.id
+      LEFT JOIN public.comprobante_retencion cr ON c.comprobante_retencion = cr.id
+      CROSS JOIN public.empresa e
+      
+      WHERE c.fecha_emision BETWEEN $1 AND $2
+        AND ci.monto_retencion > 0
+        AND c.estatus = 'activa'
+        
+      ORDER BY c.fecha_emision ASC, cr.numero_comprobante ASC;
+    `;
+
+    const { rows } = await pool.query(query, [fechaDesde, fechaHasta]);
+    return rows;
   },
 };
 

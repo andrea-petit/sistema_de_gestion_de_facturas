@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
+const { sanitizarPeticion } = require('../middleware/sanitizer');
 
 router.get('/session-info', (req, res) => {
     if (req.session && req.session.user) {
@@ -20,8 +21,8 @@ router.get('/session-info', (req, res) => {
 });
 router.get('/', userController.getAllUsers);
 router.get('/:id', userController.getUserById);
-router.post('/', userController.createUser);
-router.put('/:id', userController.updateUser);
+router.post('/', sanitizarPeticion, userController.createUser);
+router.put('/:id', sanitizarPeticion, userController.updateUser);
 router.delete('/:id', userController.inactivateUser);
 router.post('/login', userController.loginUser);
 router.post('/logout', userController.logoutUser);

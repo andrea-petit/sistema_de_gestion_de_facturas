@@ -1,4 +1,4 @@
-import { switchView } from './modulos/ui.js';
+﻿import { switchView } from './modulos/ui.js';
 import { initUploadForm } from './modulos/uploadFacturaModule.js';
 import { initBuscarModulo } from './modulos/buscarFacturaModule.js';
 import { initHistorialModulo } from './modulos/historialModule.js';
@@ -7,6 +7,7 @@ import { initUsuariosModulo } from './modulos/usuariosModule.js';
 import { initPerfilModulo } from './modulos/perfilEmpresaModule.js';
 import { initCategoriasModulo } from './modulos/categoriasModule.js';
 import { initEditarFacturaModulo } from './modulos/editarFacturaModule.js';
+import { initReportes } from './modulos/generarReporteModule.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // --- Session guard: redirect to login if session is no longer valid ---
@@ -43,6 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initPerfilModulo();
     initCategoriasModulo();
     initEditarFacturaModulo();
+    initReportes();
 });
 
 

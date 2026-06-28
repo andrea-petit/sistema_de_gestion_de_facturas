@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -463,7 +463,69 @@
                 </div>
             </div>
 
-            <div id="view-generar-reporte" class="view-panel"><div class="placeholder-view"><h3>Módulo: Generar Reporte</h3><p>Exportación de archivos consolidados.</p></div></div>
+            <div id="view-generar-reporte" class="view-panel">
+                <div class="container-box">
+                    <h2>Control Fiscal y Reportes Contables</h2>
+                    <p class="description">Seleccione los parámetros de auditoría para generar los archivos de control</p>
+                    
+                    <form id="formGenerarReporte">
+                        <div class="form-group">
+                            <label for="tipoReporte">Tipo de Reporte:</label>
+                            <select id="tipoReporte" class="bg-white" required>
+                                <option value="libro-compras" selected>Libro de Compras Mensual</option>
+                                <option value="retenciones">Relación de Retenciones Quincenales</option>
+                            </select>
+                        </div>
+
+                        <div class="calc-grid">
+                            <div class="form-group">
+                                <label for="reporteMes">Mes del Período:</label>
+                                <select id="reporteMes">
+                                    <option value="01">Enero</option>
+                                    <option value="02">Febrero</option>
+                                    <option value="03">Marzo</option>
+                                    <option value="04">Abril</option>
+                                    <option value="05">Mayo</option>
+                                    <option value="06" selected>Junio</option>
+                                    <option value="07">Julio</option>
+                                    <option value="08">Agosto</option>
+                                    <option value="09">Septiembre</option>
+                                    <option value="10">Octubre</option>
+                                    <option value="11">Noviembre</option>
+                                    <option value="12">Diciembre</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="reporteAnio">Año Fiscal:</label>
+                                <select id="reporteAnio">
+                                    <option value="2025">2025</option>
+                                    <option value="2026" selected>2026</option>
+                                    <option value="2027">2027</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Bloque condicional para la quincena (Oculto inicialmente) -->
+                        <div class="form-group hidden-sys" id="contenedorQuincenaReporte" style="margin-top: 15px; padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+                            <label for="reporteQuincena">Seleccionar Tramo Quincenal:</label>
+                            <select id="reporteQuincena" class="bg-white">
+                                <option value="1">Primera Quincena (Días 01 al 15)</option>
+                                <option value="2">Segunda Quincena (Días 16 al último del mes)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-actions-bar" style="margin-top: 25px; display: flex; gap: 15px; justify-content: flex-end;">
+                            <button type="button" id="btnExportarPdf" class="btn" style="background-color: #dc2626;">
+                                <i class="fas fa-file-pdf"></i> Previsualizar PDF
+                            </button>
+                            <button type="button" id="btnExportarExcel" class="btn btn-success">
+                                <i class="fas fa-file-excel"></i> Descargar Excel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
             
             <div id="view-ver-historial" class="view-panel">
                 <div class="container-box container-box--large">
@@ -556,9 +618,8 @@
                                     <label>Rol del Usuario:</label>
                                     <select id="userFormRol" required>
                                         <option value="">Seleccione un Rol</option>
-                                        <option value="Administrador">Administrador / CTO</option>
-                                        <option value="Auditor">Auditor Fiscal</option>
-                                        <option value="Operador">Operador de Carga</option>
+                                        <option id="optRolAdmin" value="Administrador">Administrador</option>
+                                        <option value="Empleado">Empleado</option>
                                     </select>
                                 </div>
                                 <div class="form-actions">

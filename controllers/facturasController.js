@@ -11,6 +11,7 @@ const util = require("util");
 const cloudinary = require("cloudinary").v2;
 const { extraerDatosFactura } = require("../services/ocrService");
 const path = require("path");
+const ExcelJS = require("exceljs");
 
 const unlinkAsync = util.promisify(fs.unlink);
 
@@ -586,6 +587,629 @@ const facturasController = {
       return res
         .status(500)
         .send("Error interno al generar la vista de impresión.");
+    }
+  },
+
+  async renderLibroCompras(req, res) {
+    try {
+      const { mes, anio, format } = req.query;
+      if (!mes || !anio)
+        return res.status(400).send("Faltan parámetros: mes y anio.");
+
+      // 1. Obtener los datos de la base de datos
+      const registros = await facturaModel.getLibroCompras(
+        parseInt(mes),
+        parseInt(anio),
+      );
+
+      // Extraemos la información de la empresa de la primera fila para ambos flujos
+      const datosEmpresa = registros.length > 0 ? registros[0] : {};
+      const nombreEmpresa = datosEmpresa.empresaNombre || "ECHO SYSTEMS, C.A.";
+      const rifEmpresa = datosEmpresa.empresaRif || "J-50478291-0";
+
+      // ==========================================
+      // 🟢 FLUJO A: EXCEL CORREGIDO Y ESTILIZADO
+      // ==========================================
+      if (format === "excel") {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet(`Libro Compras ${mes}-${anio}`);
+
+        // 1. Configurar los anchos y llaves de las columnas (SIN meter headers automáticos que dañen el diseño)
+        worksheet.columns = [
+          { key: "idx", width: 6 },
+          { key: "fecha", width: 14 },
+          { key: "rif", width: 16 },
+          { key: "nombre", width: 38 },
+          { key: "factura", width: 15 },
+          { key: "control", width: 15 },
+          { key: "total", width: 20 },
+          { key: "exento", width: 18 },
+          { key: "base", width: 20 },
+          { key: "alicuota", width: 10 },
+          { key: "iva", width: 18 },
+          { key: "comprobante", width: 20 },
+          { key: "retenido", width: 20 },
+        ];
+
+        // 2. Encabezado Corporativo (Filas 1 y 2)
+        worksheet.mergeCells("A1:D1");
+        const cellEmpresa = worksheet.getCell("A1");
+        cellEmpresa.value = `EMPRESA: ${nombreEmpresa}`;
+        cellEmpresa.font = {
+          name: "Arial",
+          size: 10,
+          bold: true,
+          color: { argb: "1A365D" },
+        };
+
+        worksheet.mergeCells("A2:D2");
+        const cellRif = worksheet.getCell("A2");
+        cellRif.value = `RIF: ${rifEmpresa}`;
+        cellRif.font = {
+          name: "Arial",
+          size: 10,
+          bold: true,
+          color: { argb: "1A365D" },
+        };
+
+        // 3. Título Central del Reporte (Fila 4)
+        worksheet.mergeCells("A4:M4");
+        const cellTitulo = worksheet.getCell("A4");
+        cellTitulo.value = `LIBRO DE COMPRAS - PERÍODO: ${String(mes).padStart(2, "0")}/${anio}`;
+        cellTitulo.font = {
+          name: "Arial",
+          size: 14,
+          bold: true,
+          color: { argb: "1A365D" },
+        };
+        cellTitulo.alignment = { horizontal: "center", vertical: "middle" };
+        worksheet.getRow(4).height = 25;
+
+        // 4. Inyección Manual de Cabeceras (Fila 6) para evitar conflictos de sobreescritura
+        const headers = [
+          "N°",
+          "Fecha Emisión",
+          "RIF Proveedor",
+          "Razón Social",
+          "N° Factura",
+          "N° Control",
+          "Total Compra (Bs.)",
+          "Monto Exento (Bs.)",
+          "Base Imponible (Bs.)",
+          "% Alíc.",
+          "Impuesto IVA (Bs.)",
+          "N° Comprobante",
+          "IVA Retenido (Bs.)",
+        ];
+
+        const headerRow = worksheet.getRow(6);
+        headerRow.height = 24;
+
+        headers.forEach((texto, i) => {
+          const cell = headerRow.getCell(i + 1);
+          cell.value = texto;
+          cell.font = {
+            name: "Arial",
+            bold: true,
+            color: { argb: "FFFFFF" },
+            size: 10,
+          };
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "1A365D" },
+          };
+          cell.alignment = {
+            horizontal: "center",
+            vertical: "middle",
+            wrapText: true,
+          };
+          cell.border = {
+            top: { style: "thin", color: { argb: "000000" } },
+            bottom: { style: "medium", color: { argb: "000000" } },
+            left: { style: "thin", color: { argb: "FFFFFF" } },
+            right: { style: "thin", color: { argb: "FFFFFF" } },
+          };
+        });
+
+        let totalGeneralExcel = 0;
+        let totalExentoExcel = 0;
+        let totalBaseExcel = 0;
+        let totalIvaExcel = 0;
+        let totalRetenidoExcel = 0;
+
+        // 5. Añadir los registros (Empiezan en la Fila 7)
+        registros.forEach((reg, index) => {
+          totalGeneralExcel += parseFloat(reg.montoTotal);
+          totalExentoExcel += parseFloat(reg.montoExento);
+          totalBaseExcel += parseFloat(reg.baseImponible);
+          totalIvaExcel += parseFloat(reg.montoIva);
+          totalRetenidoExcel += parseFloat(reg.montoRetencion || 0);
+
+          const row = worksheet.addRow({
+            idx: index + 1,
+            fecha: new Date(reg.fechaEmision).toLocaleDateString("es-VE"),
+            rif: reg.rifProveedor,
+            nombre: reg.proveedorNombre,
+            factura: reg.nroFactura,
+            control: reg.nroControl,
+            total: parseFloat(reg.montoTotal),
+            exento: parseFloat(reg.montoExento),
+            base: parseFloat(reg.baseImponible),
+            alicuota: parseFloat(reg.porcentajeAlicuota) / 100, // Mandamos como número decimal real para Excel
+            iva: parseFloat(reg.montoIva),
+            comprobante: reg.nroComprobante || "---",
+            retenido: parseFloat(reg.montoRetencion || 0),
+          });
+
+          row.height = 20;
+
+          // Alineaciones estéticas
+          row.getCell("A").alignment = {
+            horizontal: "center",
+            vertical: "middle",
+          };
+          row.getCell("B").alignment = {
+            horizontal: "center",
+            vertical: "middle",
+          };
+          row.getCell("C").alignment = {
+            horizontal: "left",
+            vertical: "middle",
+          };
+          row.getCell("D").alignment = {
+            horizontal: "left",
+            vertical: "middle",
+          };
+          row.getCell("E").alignment = {
+            horizontal: "center",
+            vertical: "middle",
+          };
+          row.getCell("F").alignment = {
+            horizontal: "center",
+            vertical: "middle",
+          };
+          row.getCell("J").alignment = {
+            horizontal: "center",
+            vertical: "middle",
+          };
+          row.getCell("L").alignment = {
+            horizontal: "center",
+            vertical: "middle",
+          };
+
+          // Formateo Numérico Puro (Evita las esquinas verdes de error)
+          ["G", "H", "I", "K", "M"].forEach((col) => {
+            const cell = row.getCell(col);
+            cell.numFormat = '#,##0.00;[Red](#,##0.00);"-"';
+            cell.alignment = { horizontal: "right", vertical: "middle" };
+          });
+
+          // Formato porcentual nativo para la columna J
+          row.getCell("J").numFormat = "0%";
+        });
+
+        // 6. Fila de Totales Generales Estilizada
+        const totalRow = worksheet.addRow([]);
+        totalRow.height = 22;
+
+        // Colocamos los textos y valores en las celdas precisas
+        totalRow.getCell("D").value = "TOTALES GENERALES:";
+        totalRow.getCell("G").value = totalGeneralExcel;
+        totalRow.getCell("H").value = totalExentoExcel;
+        totalRow.getCell("I").value = totalBaseExcel;
+        totalRow.getCell("K").value = totalIvaExcel;
+        totalRow.getCell("M").value = totalRetenidoExcel;
+
+        totalRow.font = { name: "Arial", bold: true, size: 10 };
+        totalRow.getCell("D").alignment = {
+          horizontal: "right",
+          vertical: "middle",
+        };
+
+        // Aplicar doble línea contable a las celdas de totales
+        ["G", "H", "I", "K", "M"].forEach((col) => {
+          const cell = totalRow.getCell(col);
+          cell.numFormat = '#,##0.00;[Red](#,##0.00);"-"';
+          cell.alignment = { horizontal: "right", vertical: "middle" };
+          cell.border = {
+            top: { style: "thin", color: { argb: "000000" } },
+            bottom: { style: "double", color: { argb: "000000" } }, // Doble línea inferior contable
+          };
+        });
+
+        // Configurar las cabeceras de respuesta de Node.js
+        res.setHeader(
+          "Content-Type",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        );
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename=Libro_Compras_${mes}_${anio}.xlsx`,
+        );
+
+        await workbook.xlsx.write(res);
+        return res.end();
+      }
+
+      // ==========================================
+      // 🔴 FLUJO B: PDF / HTML PREVIEW
+      // ==========================================
+      const templatePath = path.join(
+        __dirname,
+        "../templates/libro_compras.html",
+      );
+      let htmlContent = await fs.promises.readFile(templatePath, "utf8");
+
+      let filasHtml = "";
+      let totalGeneral = 0,
+        totalBase = 0,
+        totalIva = 0,
+        totalRetenido = 0;
+
+      registros.forEach((reg, index) => {
+        totalGeneral += parseFloat(reg.montoTotal);
+        totalBase += parseFloat(reg.baseImponible);
+        totalIva += parseFloat(reg.montoIva);
+        totalRetenido += parseFloat(reg.montoRetencion || 0);
+
+        filasHtml += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${new Date(reg.fechaEmision).toLocaleDateString("es-VE")}</td>
+                    <td>${reg.rifProveedor}</td>
+                    <td>${reg.proveedorNombre}</td>
+                    <td style="font-family: monospace;">${reg.nroFactura}</td>
+                    <td style="font-family: monospace;">${reg.nroControl}</td>
+                    <td style="text-align:right;">${parseFloat(reg.montoTotal).toLocaleString("es-VE", { minimumFractionDigits: 2 })}</td>
+                    <td style="text-align:right;">${parseFloat(reg.montoExento).toLocaleString("es-VE", { minimumFractionDigits: 2 })}</td>
+                    <td style="text-align:right;">${parseFloat(reg.baseImponible).toLocaleString("es-VE", { minimumFractionDigits: 2 })}</td>
+                    <td>${parseInt(reg.porcentajeAlicuota)}%</td>
+                    <td style="text-align:right;">${parseFloat(reg.montoIva).toLocaleString("es-VE", { minimumFractionDigits: 2 })}</td>
+                    <td style="font-family: monospace; text-align:center;">${reg.nroComprobante || "---"}</td>
+                    <td style="text-align:right; font-weight:bold;">${parseFloat(reg.montoRetencion || 0).toLocaleString("es-VE", { minimumFractionDigits: 2 })}</td>
+                </tr>
+            `;
+      });
+
+      htmlContent = htmlContent
+        .replace(/{{mes}}/g, String(mes).padStart(2, "0"))
+        .replace(/{{anio}}/g, anio)
+        .replace(/{{empresaNombre}}/g, nombreEmpresa)
+        .replace(/{{empresaRif}}/g, rifEmpresa)
+        .replace(/{{empresaDireccion}}/g, rifEmpresa)
+        .replace(/{{filasCompras}}/g, filasHtml)
+        .replace(
+          /{{totalGeneral}}/g,
+          totalGeneral.toLocaleString("es-VE", { minimumFractionDigits: 2 }),
+        )
+        .replace(
+          /{{totalBase}}/g,
+          totalBase.toLocaleString("es-VE", { minimumFractionDigits: 2 }),
+        )
+        .replace(
+          /{{totalIva}}/g,
+          totalIva.toLocaleString("es-VE", { minimumFractionDigits: 2 }),
+        )
+        .replace(
+          /{{totalRetenido}}/g,
+          totalRetenido.toLocaleString("es-VE", { minimumFractionDigits: 2 }),
+        );
+
+      return res.status(200).send(htmlContent);
+    } catch (error) {
+      console.error("Error al generar Libro de Compras:", error);
+      return res
+        .status(500)
+        .send("Error interno al procesar el libro de compras.");
+    }
+  },
+
+  async renderRelacionRetenciones(req, res) {
+    try {
+      const { mes, anio, quincena, format } = req.query;
+      if (!mes || !anio || !quincena)
+        return res.status(400).send("Faltan parámetros: mes, anio y quincena.");
+
+      // 1. Obtener los datos desde el modelo (Abstracción PostgreSQL)
+      const registros = await facturaModel.obtenerRetencionesPorQuincena(
+        parseInt(mes),
+        parseInt(anio),
+        parseInt(quincena),
+      );
+
+      // Extraemos la información de la empresa de la primera fila
+      const datosEmpresa = registros.length > 0 ? registros[0] : {};
+      const nombreEmpresa = datosEmpresa.empresaNombre || "ECHO SYSTEMS, C.A.";
+      const rifEmpresa = datosEmpresa.empresaRif || "J-50478291-0";
+
+      // ==========================================
+      // 🟢 FLUJO A: EXCEL ESTILIZADO (ECHO SYSTEMS)
+      // ==========================================
+      if (format === "excel") {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet(
+          `Retenciones Q${quincena} ${mes}-${anio}`,
+        );
+
+        // Configurar los anchos y llaves de las columnas
+        worksheet.columns = [
+          { key: "idx", width: 6 },
+          { key: "fecha", width: 14 },
+          { key: "rif", width: 16 },
+          { key: "nombre", width: 38 },
+          { key: "factura", width: 15 },
+          { key: "control", width: 15 },
+          { key: "comprobante", width: 22 },
+          { key: "total", width: 20 },
+          { key: "base", width: 20 },
+          { key: "iva", width: 18 },
+          { key: "porcentaje", width: 10 },
+          { key: "retenido", width: 20 },
+        ];
+
+        // Encabezado Corporativo (Filas 1 y 2)
+        worksheet.mergeCells("A1:D1");
+        const cellEmpresa = worksheet.getCell("A1");
+        cellEmpresa.value = `EMPRESA: ${nombreEmpresa}`;
+        cellEmpresa.font = {
+          name: "Arial",
+          size: 10,
+          bold: true,
+          color: { argb: "1A365D" },
+        };
+
+        worksheet.mergeCells("A2:D2");
+        const cellRif = worksheet.getCell("A2");
+        cellRif.value = `RIF: ${rifEmpresa}`;
+        cellRif.font = {
+          name: "Arial",
+          size: 10,
+          bold: true,
+          color: { argb: "1A365D" },
+        };
+
+        // Título Central del Reporte (Fila 4)
+        worksheet.mergeCells("A4:L4");
+        const cellTitulo = worksheet.getCell("A4");
+        cellTitulo.value = `RELACIÓN DE RETENCIONES DE IVA - ${quincena}° QUINCENA DE ${String(mes).padStart(2, "0")}/${anio}`;
+        cellTitulo.font = {
+          name: "Arial",
+          size: 14,
+          bold: true,
+          color: { argb: "1A365D" },
+        };
+        cellTitulo.alignment = { horizontal: "center", vertical: "middle" };
+        worksheet.getRow(4).height = 25;
+
+        // Cabeceras de la Tabla (Fila 6)
+        const headers = [
+          "N°",
+          "Fecha Emisión",
+          "RIF Proveedor",
+          "Razón Social",
+          "N° Factura",
+          "N° Control",
+          "N° Comprobante",
+          "Total Factura (Bs.)",
+          "Base Imponible (Bs.)",
+          "Impuesto IVA (Bs.)",
+          "% Ret.",
+          "IVA Retenido (Bs.)",
+        ];
+
+        const headerRow = worksheet.getRow(6);
+        headerRow.height = 24;
+
+        headers.forEach((texto, i) => {
+          const cell = headerRow.getCell(i + 1);
+          cell.value = texto;
+          cell.font = {
+            name: "Arial",
+            bold: true,
+            color: { argb: "FFFFFF" },
+            size: 10,
+          };
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "1A365D" },
+          };
+          cell.alignment = {
+            horizontal: "center",
+            vertical: "middle",
+            wrapText: true,
+          };
+          cell.border = {
+            top: { style: "thin", color: { argb: "000000" } },
+            bottom: { style: "medium", color: { argb: "000000" } },
+            left: { style: "thin", color: { argb: "FFFFFF" } },
+            right: { style: "thin", color: { argb: "FFFFFF" } },
+          };
+        });
+
+        let totalGeneralExcel = 0;
+        let totalBaseExcel = 0;
+        let totalIvaExcel = 0;
+        let totalRetenidoExcel = 0;
+
+        // Añadir los registros (Fila 7+)
+        registros.forEach((reg, index) => {
+          totalGeneralExcel += parseFloat(reg.montoTotal);
+          totalBaseExcel += parseFloat(reg.baseImponible);
+          totalIvaExcel += parseFloat(reg.montoIva);
+          totalRetenidoExcel += parseFloat(reg.montoRetencion || 0);
+
+          const factorRetencion =
+            parseFloat(reg.montoIva) > 0
+              ? parseFloat(reg.montoRetencion) / parseFloat(reg.montoIva)
+              : 0;
+
+          const row = worksheet.addRow({
+            idx: index + 1,
+            fecha: new Date(reg.fechaEmision).toLocaleDateString("es-VE"),
+            rif: reg.rifProveedor,
+            nombre: reg.proveedorNombre,
+            factura: reg.nroFactura,
+            control: reg.nroControl,
+            comprobante: reg.nroComprobante || "---",
+            total: parseFloat(reg.montoTotal),
+            base: parseFloat(reg.baseImponible),
+            iva: parseFloat(reg.montoIva),
+            porcentaje: factorRetencion,
+            retenido: parseFloat(reg.montoRetencion || 0),
+          });
+
+          row.height = 20;
+
+          // Alineaciones estéticas
+          ["A", "B", "E", "F", "G", "K"].forEach((col) => {
+            row.getCell(col).alignment = {
+              horizontal: "center",
+              vertical: "middle",
+            };
+          });
+          row.getCell("C").alignment = {
+            horizontal: "left",
+            vertical: "middle",
+          };
+          row.getCell("D").alignment = {
+            horizontal: "left",
+            vertical: "middle",
+          };
+
+          // Formateo Numérico Puro
+          ["H", "I", "J", "L"].forEach((col) => {
+            const cell = row.getCell(col);
+            cell.numFormat = '#,##0.00;[Red](#,##0.00);"-"';
+            cell.alignment = { horizontal: "right", vertical: "middle" };
+          });
+
+          row.getCell("K").numFormat = "0%";
+        });
+
+        // Fila de Totales Generales Estilizada
+        const totalRow = worksheet.addRow([]);
+        totalRow.height = 22;
+
+        totalRow.getCell("D").value = `TOTALES RETENIDOS Q${quincena}:`;
+        totalRow.getCell("H").value = totalGeneralExcel;
+        totalRow.getCell("I").value = totalBaseExcel;
+        totalRow.getCell("J").value = totalIvaExcel;
+        totalRow.getCell("L").value = totalRetenidoExcel;
+
+        totalRow.font = { name: "Arial", bold: true, size: 10 };
+        totalRow.getCell("D").alignment = {
+          horizontal: "right",
+          vertical: "middle",
+        };
+
+        ["G", "H", "I", "L"].forEach((col) => {
+          const cell = totalRow.getCell(col);
+          cell.numFormat = '#,##0.00;[Red](#,##0.00);"-"';
+          cell.alignment = { horizontal: "right", vertical: "middle" };
+          cell.border = {
+            top: { style: "thin", color: { argb: "000000" } },
+            bottom: { style: "double", color: { argb: "000000" } },
+          };
+        });
+
+        res.setHeader(
+          "Content-Type",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        );
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename=Relacion_Retenciones_Q${quincena}_${mes}_${anio}.xlsx`,
+        );
+
+        await workbook.xlsx.write(res);
+        return res.end();
+      }
+
+      // ==========================================
+      // 🔴 FLUJO B: PDF / HTML DESDE CARPETA TEMPLATES
+      // ==========================================
+      const templatePath = path.join(
+        __dirname,
+        "../templates/relacion_retenciones.html",
+      );
+      let htmlContent = await fs.promises.readFile(templatePath, "utf8");
+
+      let filasHtml = "";
+      let totalGeneral = 0,
+        totalBase = 0,
+        totalIva = 0,
+        totalRetenido = 0;
+
+      registros.forEach((reg, index) => {
+        totalGeneral += parseFloat(reg.montoTotal);
+        totalBase += parseFloat(reg.baseImponible);
+        totalIva += parseFloat(reg.montoIva);
+        totalRetenido += parseFloat(reg.montoRetencion || 0);
+
+        const factor =
+          parseFloat(reg.montoIva) > 0
+            ? Math.round(
+                (parseFloat(reg.montoRetencion) / parseFloat(reg.montoIva)) *
+                  100,
+              )
+            : 0;
+
+        filasHtml += `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${new Date(reg.fechaEmision).toLocaleDateString("es-VE")}</td>
+            <td>${reg.rifProveedor}</td>
+            <td>${reg.proveedorNombre}</td>
+            <td style="font-family: monospace;">${reg.nroFactura}</td>
+            <td style="font-family: monospace;">${reg.nroControl}</td>
+            <td style="font-family: monospace; text-align:center;">${reg.nroComprobante || "---"}</td>
+            <td style="text-align:right;">${parseFloat(reg.montoTotal).toLocaleString("es-VE", { minimumFractionDigits: 2 })}</td>
+            <td style="text-align:right;">${parseFloat(reg.baseImponible).toLocaleString("es-VE", { minimumFractionDigits: 2 })}</td>
+            <td style="text-align:right;">${parseFloat(reg.montoIva).toLocaleString("es-VE", { minimumFractionDigits: 2 })}</td>
+            <td style="text-align:center;">${factor}%</td>
+            <td style="text-align:right; font-weight:bold;">${parseFloat(reg.montoRetencion || 0).toLocaleString("es-VE", { minimumFractionDigits: 2 })}</td>
+          </tr>
+        `;
+      });
+
+      // Si no hay datos, mostrar aviso contable limpio
+      if (registros.length === 0) {
+        filasHtml =
+          '<tr><td colspan="12" style="text-align:center; padding: 20px;">No se encontraron retenciones aplicadas en este período.</td></tr>';
+      }
+
+      htmlContent = htmlContent
+        .replace(/{{quincena}}/g, quincena)
+        .replace(/{{mes}}/g, String(mes).padStart(2, "0"))
+        .replace(/{{anio}}/g, anio)
+        .replace(/{{empresaNombre}}/g, nombreEmpresa)
+        .replace(/{{empresaRif}}/g, rifEmpresa)
+        .replace(/{{filasRetenciones}}/g, filasHtml)
+        .replace(
+          /{{totalGeneral}}/g,
+          totalGeneral.toLocaleString("es-VE", { minimumFractionDigits: 2 }),
+        )
+        .replace(
+          /{{totalBase}}/g,
+          totalBase.toLocaleString("es-VE", { minimumFractionDigits: 2 }),
+        )
+        .replace(
+          /{{totalIva}}/g,
+          totalIva.toLocaleString("es-VE", { minimumFractionDigits: 2 }),
+        )
+        .replace(
+          /{{totalRetenido}}/g,
+          totalRetenido.toLocaleString("es-VE", { minimumFractionDigits: 2 }),
+        );
+
+      return res.status(200).send(htmlContent);
+    } catch (error) {
+      console.error("Error al generar Relación de Retenciones:", error);
+      return res
+        .status(500)
+        .send("Error interno al procesar la relación de retenciones.");
     }
   },
 };

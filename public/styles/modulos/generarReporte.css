@@ -3,3 +3,34 @@
 #view-generar-reporte {
   font-family: var(--font-body);
 }
+
+/* Estilos particulares del módulo de reportes */
+.hidden-sys {
+    display: none !important;
+}
+
+#formGenerarReporte select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+#formGenerarReporte .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+/* Reutilización del layout de cuadrícula que usas en subir facturas */
+@media (min-width: 768px) {
+    .calc-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+}
