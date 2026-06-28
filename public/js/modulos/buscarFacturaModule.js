@@ -22,7 +22,7 @@ export function initBuscarModulo() {
         }
 
         const [anio, mes, dia] = fechaSeleccionada.split('-');
-        const fechaFormateada = `${anio}-${dia}-${mes}`;
+        const fechaFormateada = `${anio}-${mes}-${dia}`;
         console.log("[SGAF Frontend] Fecha corregida enviada al API:", fechaFormateada);
 
         btnBuscar.disabled = true;

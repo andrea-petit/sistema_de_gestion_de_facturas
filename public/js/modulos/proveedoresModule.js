@@ -1,6 +1,6 @@
 // Variables de control de estado para la paginación del SGAF
 let paginaActual = 1;
-const limitePorPagina = 8; // Cantidad de proveedores por tabla
+const limitePorPagina = 5; // Cantidad de proveedores por tabla
 
 export function initProveedoresModulo() {
   // Primera carga inicializada

@@ -55,7 +55,7 @@ async function cargarHistorial(page) {
         const pag = resultado.paginacion || { paginaActual: page, totalPaginas: 1, totalRegistros: registros.length };
 
         if (registros.length === 0) {
-            cuerpo.innerHTML = `<tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--text-muted);">No existen registros en la bitácora de cambios.</td></tr>`;
+            cuerpo.innerHTML = `<tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--text-muted);">No existen registros de historial.</td></tr>`;
             if (infoPag) infoPag.innerText = "Página 0 de 0";
             if (btnPrev) btnPrev.disabled = true;
             if (btnNext) btnNext.disabled = true;
