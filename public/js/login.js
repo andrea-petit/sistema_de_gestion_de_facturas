@@ -39,7 +39,7 @@ form.addEventListener("submit", async (e) => {
         Swal.fire({
           icon: 'success',
           title: 'Acceso concedido',
-          text: 'Redirigiendo al dashboard...',
+          text: datos.msg || 'Redirigiendo al dashboard...',
           timer: 1200,
           showConfirmButton: false,
           timerProgressBar: true,
@@ -51,12 +51,22 @@ form.addEventListener("submit", async (e) => {
         setTimeout(() => window.location.replace('/dashboard'), 1200);
       }
     } else {
-      errorDiv.innerText = datos.msg;
-      errorDiv.classList.remove("hidden");
+      // Si datos.ok es falso, disparamos SweetAlert2 usando el "msg" que manda el backend
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error de ingreso',
+          text: datos.msg || 'Usuario o contraseña incorrectos.',
+          confirmButtonColor: '#3085d6'
+        });
+      } else {
+        errorDiv.innerText = datos.msg || 'Usuario o contraseña incorrectos.';
+        errorDiv.classList.remove("hidden");
+      }
     }
   } catch (error) {
-    errorDiv.innerText =
-      'Error: Asegúrate de correr "node app.js" en la terminal.';
+    console.error(error);
+    errorDiv.innerText = 'Error de conexión con el servidor.';
     errorDiv.classList.remove("hidden");
   }
 });
