@@ -24,8 +24,11 @@ router.get('/:id', userController.getUserById);
 router.post('/', sanitizarPeticion, userController.createUser);
 router.put('/:id', sanitizarPeticion, userController.updateUser);
 router.delete('/:id', userController.inactivateUser);
+router.post('/activate/:id', sanitizarPeticion, userController.activateUser);
 router.post('/login', userController.loginUser);
 router.post('/logout', userController.logoutUser);
+
+
 
 
 module.exports = router;

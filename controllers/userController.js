@@ -138,7 +138,23 @@ const userController= {
             res.status(500).json({ ok: false, msg: 'Error inactivating user.' });
         }
     },
+    activateUser: (req, res) => {
+    const { id } = req.params;
 
+    userModel.activateUser(id)
+        .then((results) => {
+            // Validamos que se haya modificado alguna fila en Postgres
+            if (results.rowCount === 0) {
+                return res.status(404).json({ ok: false, msg: 'Usuario no encontrado.' });
+            }
+            // Devolvemos el ok que espera el frontend
+            res.json({ ok: true, msg: 'Usuario activado con éxito.', user: results.rows[0] });
+        })
+        .catch((error) => {
+            console.error('Error al activar usuario en DB:', error);
+            res.status(500).json({ ok: false, msg: 'Error interno del servidor al activar.' });
+        });
+},
     async loginUser(req, res) {
         const { nombre_usuario, contraseña } = req.body;
         if (!nombre_usuario || !contraseña) {

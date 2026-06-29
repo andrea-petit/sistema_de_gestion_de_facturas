@@ -172,7 +172,7 @@ export async function cargarUsuariosTabla(operadorRol) {
                 const btnInactivar = document.createElement('button');
                 btnInactivar.innerText = estaActivo ? "Inactivar" : "Activar";
                 btnInactivar.classList.add('action-btn');
-                btnInactivar.onclick = () => alternarEstadoUsuario(user.id, user.nombre_usuario, operadorRol);
+                btnInactivar.onclick = () => alternarEstadoUsuario(user.id, user.nombre_usuario, user.activo, operadorRol);
 
                 if (zonaAcciones) {
                     zonaAcciones.appendChild(btnEdit);
@@ -269,7 +269,7 @@ export async function procesarFormularioUsuario(operadorRol) {
     }
 }
 
-export async function alternarEstadoUsuario(id, username, operadorRol) {
+export async function alternarEstadoUsuario(id, username, activo, operadorRol) {
     const confirmCambio = await Swal.fire({
         title: `¿Deseas cambiar el estado de actividad de @${username}?`,
         icon: 'warning',
@@ -281,8 +281,16 @@ export async function alternarEstadoUsuario(id, username, operadorRol) {
     if (!confirmCambio.isConfirmed) return;
 
     try {
-        const res = await fetch(`/api/users/${id}`, { method: 'DELETE', credentials: 'include' });
+        // Si activo es false, el usuario está Inactivo, entonces la acción es Activar
+        const esActivar = activo === false;
+
+        // Elegimos la ruta y el método correctos sin adivinar
+        const url = esActivar ? `/api/users/activate/${id}` : `/api/users/${id}`;
+        const metodo = esActivar ? 'POST' : 'DELETE';
+
+        const res = await fetch(url, { method: metodo, credentials: 'include' });
         const data = await res.json();
+        
         if (!res.ok) throw new Error(data.msg || 'No se pudo procesar la solicitud.');
 
         await Swal.fire({

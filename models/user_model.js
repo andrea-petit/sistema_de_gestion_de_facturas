@@ -60,6 +60,17 @@ const userModel = {
             });
         });
     },
+    activateUser(id) {
+        return new Promise((resolve, reject) => {
+            pool.query('UPDATE usuarios SET activo = true WHERE id = $1 RETURNING *', [id], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
+    },
 
     loginUser(nombre_usuario) {
         return new Promise((resolve, reject) => {
