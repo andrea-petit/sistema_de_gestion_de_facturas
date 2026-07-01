@@ -187,6 +187,7 @@ export async function initUploadForm() {
         verificationForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            const textoPlano = document.getElementById('resTextoPlano')?.innerText || '';
             const datosVerificados = {
                 proveedor: document.getElementById('valProveedor').value.trim(),
                 direccion: document.getElementById('valDireccion').value.trim(),
@@ -202,7 +203,8 @@ export async function initUploadForm() {
                 montoAfectoIva: parseFloat(valBaseImponible.value) || 0,
                 montoIva: parseFloat(document.getElementById('valMontoIva').value) || 0,
                 porcentaje_retencion: parseFloat(document.getElementById('valPorcentajeRetencion')?.value) || 0,
-                monto_retencion: parseFloat(document.getElementById('valMontoRetencion')?.value) || 0
+                monto_retencion: parseFloat(document.getElementById('valPorcentajeRetencion')?.value) || 0,
+                textoPlano: textoPlano
             };
 
             try {

@@ -55,48 +55,50 @@ const facturasController = {
       const datosExtraidos = await extraerDatosFactura(req.file.path);
 
       // =========================================================================
-      // ⚡ 1.5. VALIDACIÓN ULTRA RÁPIDA (Borrosa / No es Factura) - ¡NUEVO!
+      // ⚡ FILTRO FISCAL ESTRICTO (Frena logos, paisajes o imágenes borrosas)
       // =========================================================================
-      // Evaluamos el texto crudo extraído o si los campos clave vinieron completamente vacíos
-      const textoParaValidar =
-        datosExtraidos.text || datosExtraidos.rawText || "";
 
-      // Control A: Imagen borrosa o ilegible (Texto extraído excesivamente corto)
-      if (
-        textoParaValidar.trim().length < 30 &&
-        !datosExtraidos.rif &&
-        !datosExtraidos.razon_social
-      ) {
-        // Limpieza preventiva del archivo local antes de salir
+      // Convertimos todos los valores extraídos a una sola cadena en minúsculas para buscar patrones
+      const valoresCrudos = Object.values(datosExtraidos || {})
+        .map((v) => String(v).toLowerCase().trim())
+        .join(" ");
+
+      // 1. Verificación Rigurosa de RIF Venezolano
+      // Valida si existe una letra fiscal (J, V, G, E, P) seguida de números, o si el campo está lleno
+      const rifLimpio = String(
+        datosExtraidos.rifEmisor || datosExtraidos.rif || "",
+      ).trim();
+      const tieneRifValido =
+        /^[jvgep]-?[0-9]+/i.test(rifLimpio) ||
+        /^[jvgep]-?[0-9]+/i.test(valoresCrudos);
+
+      // 2. Verificación de Fecha de Emisión (Indispensable para el período del Libro de Compras)
+      const fechaLimpia = String(
+        datosExtraidos.fechaEmision || datosExtraidos.fecha || "",
+      ).trim();
+      // Revisa si hay una fecha estructurada o texto que parezca una fecha (ej: 2026, /06/, /202)
+      const tieneFecha =
+        fechaLimpia.length > 4 || /\d{2}[-/]\d{2}[-/]\d{4}/.test(valoresCrudos);
+
+      // 3. Verificación de Montos Contables
+      const montoTotal = parseFloat(
+        datosExtraidos.montoTotal || datosExtraidos.total || 0,
+      );
+      const baseImponible = parseFloat(
+        datosExtraidos.baseImponible || datosExtraidos.base_imponible || 0,
+      );
+      const tieneMontos = montoTotal > 0 || baseImponible > 0;
+
+      // 🌟 REGLA DE ORO DE EXCLUSIÓN:
+      // Una factura para el Libro de Compras DEBE tener obligatoriamente un RIF identificable
+      // Y al menos una Fecha o Montos asociados. Si no cumple esto (como el caso del logo), se rechaza.
+      if (!tieneRifValido || (!tieneFecha && !tieneMontos)) {
+        // Borramos el archivo temporal local de inmediato
         await unlinkAsync(req.file.path).catch(() => {});
 
         return res.status(422).json({
           error:
-            "Por favor, verifica la imagen subida. No se pudo leer el contenido.",
-        });
-      }
-
-      // Control B: ¿Es un documento fiscal? (Validación por palabras clave en una sola pasada de CPU)
-      const textoMin = textoParaValidar.toLowerCase();
-      const palabrasClave = [
-        "factura",
-        "rif",
-        "control",
-        "iva",
-        "base imponible",
-        "seniat",
-      ];
-      const coincidencias = palabrasClave.filter((palabra) =>
-        textoMin.includes(palabra),
-      ).length;
-
-      // Si no tiene campos estructurados ni palabras clave del SENIAT, rechazamos
-      if (coincidencias < 2 && !datosExtraidos.rif) {
-        await unlinkAsync(req.file.path).catch(() => {});
-
-        return res.status(422).json({
-          error:
-            "El documento cargado no parece ser una factura fiscal válida. Verifique el archivo.",
+            "El archivo cargado no contiene los datos mínimos de una factura fiscal (RIF, Fecha o Montos). Verifique que la imagen corresponda a un documento comercial legible.",
         });
       }
       // =========================================================================
@@ -108,7 +110,7 @@ const facturasController = {
         });
       }
 
-      // 3. Subir imagen de respaldo a Cloudinary (Solo si la factura es válida y legible)
+      // 3. Subir imagen de respaldo a Cloudinary (Solo si superó el filtro superior)
       const uploadResult = await cloudinary.uploader.upload(req.file.path, {
         folder: "facturas",
         resource_type: "image",
@@ -160,11 +162,32 @@ const facturasController = {
         porcentaje_retencion,
       } = req.body;
 
+      const textoDeValidacion = String(
+        req.body.textoPlano || req.body.texto || req.body.rawText || "",
+      ).trim();
+      const pareceFactura = Boolean(
+        proveedor &&
+        rifEmisor &&
+        nroFactura &&
+        (textoDeValidacion.toLowerCase().includes("factura") ||
+          textoDeValidacion.toLowerCase().includes("rif") ||
+          textoDeValidacion.toLowerCase().includes("iva") ||
+          textoDeValidacion.toLowerCase().includes("control") ||
+          textoDeValidacion.toLowerCase().includes("seniat")),
+      );
+
       // Validaciones obligatorias de negocio a nivel de transporte/petición
       if (!proveedor || !rifEmisor || !nroFactura) {
         return res.status(400).json({
           error:
             "Proveedor, RIF y Número de Factura son obligatorios para el Libro de Compras.",
+        });
+      }
+
+      if (!pareceFactura) {
+        return res.status(422).json({
+          error:
+            "El documento no parece ser una factura fiscal válida. No se puede guardar.",
         });
       }
 
