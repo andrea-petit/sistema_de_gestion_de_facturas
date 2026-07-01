@@ -51,8 +51,55 @@ const facturasController = {
           .json({ error: "Por favor, sube una imagen de factura" });
       }
 
-      // 1. Ejecutar servicio OCR con LlamaCloud
+      // 1. Ejecutar servicio OCR con LlamaCloud (Tarda aprox. 15s)
       const datosExtraidos = await extraerDatosFactura(req.file.path);
+
+      // =========================================================================
+      // ⚡ 1.5. VALIDACIÓN ULTRA RÁPIDA (Borrosa / No es Factura) - ¡NUEVO!
+      // =========================================================================
+      // Evaluamos el texto crudo extraído o si los campos clave vinieron completamente vacíos
+      const textoParaValidar =
+        datosExtraidos.text || datosExtraidos.rawText || "";
+
+      // Control A: Imagen borrosa o ilegible (Texto extraído excesivamente corto)
+      if (
+        textoParaValidar.trim().length < 30 &&
+        !datosExtraidos.rif &&
+        !datosExtraidos.razon_social
+      ) {
+        // Limpieza preventiva del archivo local antes de salir
+        await unlinkAsync(req.file.path).catch(() => {});
+
+        return res.status(422).json({
+          error:
+            "Por favor, verifica la imagen subida. No se pudo leer el contenido.",
+        });
+      }
+
+      // Control B: ¿Es un documento fiscal? (Validación por palabras clave en una sola pasada de CPU)
+      const textoMin = textoParaValidar.toLowerCase();
+      const palabrasClave = [
+        "factura",
+        "rif",
+        "control",
+        "iva",
+        "base imponible",
+        "seniat",
+      ];
+      const coincidencias = palabrasClave.filter((palabra) =>
+        textoMin.includes(palabra),
+      ).length;
+
+      // Si no tiene campos estructurados ni palabras clave del SENIAT, rechazamos
+      if (coincidencias < 2 && !datosExtraidos.rif) {
+        await unlinkAsync(req.file.path).catch(() => {});
+
+        return res.status(422).json({
+          error:
+            "El documento cargado no parece ser una factura fiscal válida. Verifique el archivo.",
+        });
+      }
+      // =========================================================================
 
       // 2. Validar credenciales de Cloudinary
       if (!cloudName || !cloudApiKey || !cloudApiSecret) {
@@ -61,7 +108,7 @@ const facturasController = {
         });
       }
 
-      // 3. Subir imagen de respaldo a Cloudinary
+      // 3. Subir imagen de respaldo a Cloudinary (Solo si la factura es válida y legible)
       const uploadResult = await cloudinary.uploader.upload(req.file.path, {
         folder: "facturas",
         resource_type: "image",

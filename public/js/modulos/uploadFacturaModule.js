@@ -244,8 +244,8 @@ export async function initUploadForm() {
                 console.error("[SGAF Error Frontend Guardar]:", err);
                 await Swal.fire({
                     icon: 'error',
-                    title: 'Error de conexión',
-                    text: 'No se pudo registrar la factura. Intenta de nuevo.'
+                    title: 'Error subiendo factura',
+                    text: 'No se pudo registrar la factura: ' + err.message
                 });
             }
         });

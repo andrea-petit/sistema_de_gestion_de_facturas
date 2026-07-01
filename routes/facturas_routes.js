@@ -6,7 +6,7 @@ const { sanitizarPeticion } = require('../middleware/sanitizer');
 const upload = require('multer')({ dest: 'uploads/' });
 
 
-router.post('/facturas', upload.single('factura'), authMiddleware, sanitizarPeticion, facturasController.procesarOcr);
+router.post('/facturas', upload.single('factura'), authMiddleware, facturasController.procesarOcr);
 router.post('/facturas/guardar', authMiddleware, sanitizarPeticion, facturasController.confirmarYGuardar);
 router.get('/facturas/buscar/coincidencia', facturasController.buscarFacturaPorTexto);
 router.put('/facturas/:id', authMiddleware, sanitizarPeticion, facturasController.editarFactura);
