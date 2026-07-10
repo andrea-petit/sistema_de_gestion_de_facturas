@@ -7,7 +7,6 @@
 }
 #panelEditarProveedor {
   background: #f8fafc;
-  font-family: var(--font-body);
 }
 
 #td_rif {
@@ -52,4 +51,59 @@
   font-size: 11px;
   color: var(--warning);
   font-weight: 500;
+}
+
+.td-prov {
+  padding: 12px 10px;
+}
+.btn-editar-prov {
+  padding: 5px 10px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .panel-edit-provider {
+    flex: 1;
+    width: 100%;
+  }
+  .panel-list-proveedores {
+    flex: 1;
+    width: 100%;
+    overflow-x: hidden;
+  }
+  .container-box--xwide {
+    max-width: 100%;
+  }
+  #td_rif {
+    width: auto;
+  }
+  #view-ver-proveedores table {
+    min-width: 0;
+  }
+  .td-prov {
+    padding: 8px 6px;
+    font-size: 11px;
+    word-break: break-word;
+  }
+}
+
+@media (max-width: 480px) {
+  .panel-edit-provider {
+    padding: 15px;
+  }
+  .editor-placeholder {
+    padding: 25px 10px;
+    font-size: 12px;
+  }
+  .td-prov {
+    padding: 6px 3px;
+    font-size: 10px;
+  }
+  .td-tel {
+    font-size: 9px;
+  }
+  .btn-editar-prov {
+    padding: 6px 8px;
+    font-size: 14px;
+  }
 }

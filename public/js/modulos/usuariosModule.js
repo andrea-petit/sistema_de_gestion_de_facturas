@@ -149,14 +149,14 @@ export async function cargarUsuariosTabla(operadorRol) {
             
             const estaActivo = user.activo !== false;
             const badgeEstado = estaActivo
-                ? `<span class="badge-active">Activo</span>`
-                : `<span class="badge-inactive">Inactivo</span>`;
+                ? `<span class="badge-active" title="Activo"><i class="fas fa-check-circle show-on-mobile"></i><span class="hide-on-mobile">Activo</span></span>`
+                : `<span class="badge-inactive" title="Inactivo"><i class="fas fa-times-circle show-on-mobile"></i><span class="hide-on-mobile">Inactivo</span></span>`;
 
             tr.innerHTML = `
                 <td class="td-username">@${user.nombre_usuario || 'S/U'}</td>
                 <td class="td-normal">${user.nombre_completo || 'Sin Nombre'}</td>
                 <td class="td-role"><span style="text-transform: capitalize; font-size: 12px; color: #475569; font-weight: 500;">${user.rol || 'Sin Rol'}</span></td>
-                <td>${badgeEstado}</td>
+                <td style="text-align: center;">${badgeEstado}</td>
                 <td class="td-actions acciones-zona"></td>
             `;
 
@@ -165,13 +165,17 @@ export async function cargarUsuariosTabla(operadorRol) {
                 if (zonaAcciones) zonaAcciones.innerHTML = `<span style="color: ${colorMuted}; font-size: 12px; font-style: italic;">Protegido</span>`;
             } else {
                 const btnEdit = document.createElement('button');
-                btnEdit.innerText = "Editar";
+                btnEdit.innerHTML = '<i class="fas fa-edit show-on-mobile"></i><span class="hide-on-mobile">Editar</span>';
+                btnEdit.title = 'Editar';
                 btnEdit.classList.add('action-btn');
+                btnEdit.style.color = '#3b82f6';
                 btnEdit.onclick = () => setFormModo('EDICION', user, operadorRol);
 
                 const btnInactivar = document.createElement('button');
-                btnInactivar.innerText = estaActivo ? "Inactivar" : "Activar";
+                btnInactivar.innerHTML = estaActivo ? '<i class="fas fa-ban show-on-mobile"></i><span class="hide-on-mobile">Inactivar</span>' : '<i class="fas fa-check-circle show-on-mobile"></i><span class="hide-on-mobile">Activar</span>';
+                btnInactivar.title = estaActivo ? 'Inactivar' : 'Activar';
                 btnInactivar.classList.add('action-btn');
+                btnInactivar.style.color = estaActivo ? '#ef4444' : '#10b981';
                 btnInactivar.onclick = () => alternarEstadoUsuario(user.id, user.nombre_usuario, user.activo, operadorRol);
 
                 if (zonaAcciones) {

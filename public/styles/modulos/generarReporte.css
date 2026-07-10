@@ -1,7 +1,7 @@
 /* Estilos específicos del módulo Generar Reporte */
 
-#view-generar-reporte {
-  font-family: var(--font-body);
+#view-generar-reportes p {
+  line-height: 1.6;
 }
 
 /* Estilos particulares del módulo de reportes */
@@ -32,5 +32,27 @@
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 15px;
+    }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    #formGenerarReporte .form-actions-bar {
+        flex-direction: column;
+    }
+    #formGenerarReporte .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    #formGenerarReporte select {
+        font-size: 13px;
+        padding: 7px 10px;
+    }
+    #formGenerarReporte .btn {
+        font-size: 13px;
+        padding: 10px;
     }
 }

@@ -15,9 +15,9 @@ export function initReportes() {
     // 🌟 1. Control de visualización condicional (Quincenas)
     tipoReporte.addEventListener('change', (e) => {
         if (e.target.value === 'retenciones') {
-            contenedorQuincena.classList.remove('hidden-sys');
+            contenedorQuincena.classList.remove('hidden');
         } else {
-            contenedorQuincena.classList.add('hidden-sys');
+            contenedorQuincena.classList.add('hidden');
         }
     });
 

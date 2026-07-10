@@ -62,9 +62,9 @@ export async function initEditarFacturaModulo() {
             selectCategoria.value = factura.categoria;
         }
 
-        // Mostrar formulario y cerrar modal
-        contenedorForm.classList.remove('hidden-sys');
-        modal.classList.add('hidden-sys');
+        // Ocultar modal de selección, mostrar formulario de edición
+        contenedorForm.classList.remove('hidden');
+        modal.classList.add('hidden');
         if (msgEstado) msgEstado.innerHTML = `<p class="success-box-sys"><i class="fas fa-check"></i> Editando Factura N° <strong>${factura.numero_factura}</strong> de ${factura.proveedor}.</p>`;
     }
 
@@ -129,8 +129,8 @@ export async function initEditarFacturaModulo() {
         if (!criterioActual) return;
 
         paginaActual = 1; // Reseteamos a la página uno para la nueva búsqueda
-        contenedorForm.classList.add('hidden-sys');
-        modal.classList.remove('hidden-sys'); // Abrimos el modal intermedio
+        contenedorForm.classList.add('hidden');
+        modal.classList.remove('hidden'); // Abrimos el modal intermedio
         
         consultarFacturasPaginadas();
     });
@@ -151,7 +151,7 @@ export async function initEditarFacturaModulo() {
     };
 
     // Cerrar el modal de forma manual
-    btnCerrarModal.onclick = () => modal.classList.add('hidden-sys');
+    btnCerrarModal.onclick = () => modal.classList.add('hidden');
 
     // Guardar cambios del formulario (PUT)
     formEditar.addEventListener('submit', async (e) => {
@@ -189,8 +189,8 @@ export async function initEditarFacturaModulo() {
         formEditar.reset();
         formBuscador.reset();
         if (msgEstado) msgEstado.innerHTML = '';
-        contenedorForm.classList.add('hidden-sys');
-        modal.classList.add('hidden-sys');
+        contenedorForm.classList.add('hidden');
+        modal.classList.add('hidden');
         criterioActual = "";
     }
 

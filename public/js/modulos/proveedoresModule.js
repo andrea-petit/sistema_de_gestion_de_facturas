@@ -135,12 +135,12 @@ export async function cargarProveedores(pagina = 1) {
       const rifVisual = `${tipoDocPrefix}${rifCompleto}`;
 
       tr.innerHTML = `
-                <td style="padding: 12px 10px; font-weight: 600; color: #0f172a;">${rifVisual}</td>
-                <td style="padding: 12px 10px; color: #334155; font-weight: 500;">${prov.razon_social}</td>
-                <td style="padding: 12px 10px; color: #64748b;">${prov.telefono || "N/A"}</td>
-                <td style="padding: 12px 10px; text-align: right;">
-                    <button class="btn-editar-prov" style="background: #f1f5f9; color: var(--primary); border: 1px solid var(--border); padding: 5px 10px; font-size: 12px; font-weight: 600; border-radius: 4px; cursor: pointer; transition: all 0.2s;">
-                        Editar
+                <td class="td-prov" style="font-weight: 600; color: #0f172a;">${rifVisual}</td>
+                <td class="td-prov" style="color: #334155; font-weight: 500;">${prov.razon_social}</td>
+                <td class="td-prov td-tel" style="color: #64748b;">${prov.telefono || "N/A"}</td>
+                <td class="td-prov" style="text-align: right;">
+                    <button class="btn-editar-prov" title="Editar" style="background: #f1f5f9; color: var(--primary); border: 1px solid var(--border); font-size: 12px; font-weight: 600; border-radius: 4px; cursor: pointer; transition: all 0.2s;">
+                        <i class="fas fa-edit show-on-mobile"></i><span class="hide-on-mobile">Editar</span>
                     </button>
                 </td>
             `;

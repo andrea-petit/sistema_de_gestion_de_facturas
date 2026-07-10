@@ -56,7 +56,6 @@
   background: #f1f5f9;
   padding: 15px;
   border-radius: 8px;
-  font-family: var(--font-body);
 }
 .btn-small-right {
   width: auto;
@@ -69,11 +68,9 @@
   border-radius: 8px;
   background: #ffffff;
   overflow: hidden;
-  font-family: var(--font-body);
 }
 .panel-preview {
   width: 380px;
-  font-family: var(--font-body);
   border: 1px solid var(--border);
   border-radius: 8px;
   background: #f8fafc;
@@ -135,4 +132,37 @@
   color: var(--text-muted);
   text-align: center;
   margin-top: 8px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .search-header {
+    flex-direction: column;
+  }
+  .btn-small-right {
+    align-self: stretch;
+    width: 100%;
+  }
+  .panel-preview {
+    width: 100%;
+  }
+  #visorFactura {
+    width: 100%;
+  }
+  .visor-image-wrap {
+    height: 250px;
+  }
+  .container-box--wide {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .visor-image-wrap {
+    height: 200px;
+  }
+  .th-cell {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
 }

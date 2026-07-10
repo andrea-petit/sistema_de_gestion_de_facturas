@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -92,8 +92,15 @@
         </div>
     </div>
 
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <div class="main-content">
-        <div class="top-bar" id="topBarTitle">Facturas > Subir Facturas</div>
+        <div class="top-bar">
+            <button class="hamburger-btn" id="hamburgerBtn" aria-label="Abrir menú">
+                <i class="fas fa-bars"></i>
+            </button>
+            <span id="topBarTitle">Facturas &gt; Subir Facturas</span>
+        </div>
         <div class="content-body">
 
             <div id="view-subir-facturas" class="view-panel active">
@@ -247,82 +254,84 @@
             </div>
 
             <div id="view-editar-factura" class="view-panel">
-                <div class="panel-header">
-                    <h2>Módulo de Corrección de Facturas</h2>
-                    <p>Localice el documento indexado y ajuste sus metadatos de control fiscal.</p>
+                <div class="container-box">
+                    <div class="panel-header">
+                        <h2>Módulo de Corrección de Facturas</h2>
+                        <p class="description">Localice el documento indexado y ajuste sus metadatos de control fiscal.</p>
+                    </div>
+
+                    <div class="search-box-direct-sys" style="margin-bottom: 20px;">
+                        <form id="formLocalizarFactura" class="search-form-inline">
+                            <div class="form-group no-mb">
+                                <label for="inputBuscarCodigo">Localizar Documento:</label>
+                                <div class="flex-row gap-20">
+                                    <input type="text" id="inputBuscarCodigo" placeholder="Ej: 00014910 o Razón Social..." required style="flex: 1;">
+                                    <button type="submit" class="btn" style="width: auto;">
+                                        <i class="fas fa-search"></i> Buscar Facturas
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="msgBusquedaEstado" class="status-msg-area"></div>
+
+                    <hr class="divider-sys" style="border: 0; border-bottom: 1px solid var(--border); margin: 20px 0;">
+
+                    <div id="contenedorFormularioEdicion" class="form-container-sys hidden">
+                        <h3 class="module-heading"><i class="fas fa-edit"></i> Datos Modificables de la Factura</h3>
+                        <form id="formEditarFactura" class="system-form">
+                            <input type="hidden" id="editFacturaId">
+                            <input type="hidden" id="editProveedorId">
+
+                            <div class="calc-grid">
+                                <div class="form-group locked-field">
+                                    <label for="editMontoTotal"><i class="fas fa-lock"></i> Monto Total (BS) - Protegido</label>
+                                    <input type="text" id="editMontoTotal" class="input-readonly" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCategoria">Categoría Asignada</label>
+                                    <select id="editCategoria" required></select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="editNroFactura">Número de Factura</label>
+                                    <input type="text" id="editNroFactura" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="editNroControl">Número de Control</label>
+                                    <input type="text" id="editNroControl" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="editFechaEmision">Fecha de Emisión</label>
+                                    <input type="date" id="editFechaEmision" required>
+                                </div>
+                            </div>
+                            <div class="form-actions-bar flex-row gap-20" style="margin-top: 25px; justify-content: flex-end;">
+                                <button type="button" id="btnLimpiarModulo" class="btn" style="background-color: #64748b; width: auto;">Cerrar Edición</button>
+                                <button type="submit" class="btn btn-primary" style="width: auto;"><i class="fas fa-save"></i> Registrar Corrección</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
 
-                <div class="search-box-direct-sys">
-                    <form id="formLocalizarFactura" class="search-form-inline">
-                        <div class="search-input-group">
-                            <label for="inputBuscarCodigo">Localizar Documento:</label>
-                            <div class="input-with-button">
-                                <input type="text" id="inputBuscarCodigo" placeholder="Ej: 00014910 o Razón Social..." required>
-                                <button type="submit" class="btn-sys btn-search-submit">
-                                    <i class="fas fa-search"></i> Buscar Facturas
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-
-                <div id="msgBusquedaEstado" class="status-msg-area"></div>
-
-                <hr class="divider-sys">
-
-                <div id="contenedorFormularioEdicion" class="form-container-sys hidden-sys">
-                    <h3 class="section-title-sys"><i class="fas fa-edit"></i> Datos Modificables de la Factura</h3>
-                    <form id="formEditarFactura" class="system-form">
-                        <input type="hidden" id="editFacturaId">
-                        <input type="hidden" id="editProveedorId">
-
-                        <div class="form-grid-two-columns">
-                            <div class="form-group locked-field">
-                                <label for="editMontoTotal"><i class="fas fa-lock"></i> Monto Total (BS) - Protegido</label>
-                                <input type="text" id="editMontoTotal" class="input-sys disabled-input" readonly>
-                            </div>
-                            <div class="form-group">
-                                <label for="editCategoria">Categoría Asignada</label>
-                                <select id="editCategoria" class="input-sys" required></select>
-                            </div>
-                            <div class="form-group">
-                                <label for="editNroFactura">Número de Factura</label>
-                                <input type="text" id="editNroFactura" class="input-sys" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="editNroControl">Número de Control</label>
-                                <input type="text" id="editNroControl" class="input-sys" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="editFechaEmision">Fecha de Emisión</label>
-                                <input type="date" id="editFechaEmision" class="input-sys" required>
-                            </div>
-                        </div>
-                        <div class="form-actions-bar">
-                            <button type="button" id="btnLimpiarModulo" class="btn-sys btn-secondary">Cerrar Edición</button>
-                            <button type="submit" class="btn-sys btn-primary"><i class="fas fa-save"></i> Registrar Corrección</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div id="modalSelectorFacturas" class="modal-sys hidden-sys">
+                <div id="modalSelectorFacturas" class="modal-sys hidden">
                     <div class="modal-content-sys">
                         <div class="modal-header-sys">
                             <h3><i class="fas fa-copy"></i> Documentos Encontrados</h3>
                             <button type="button" id="btnCerrarModalFacturas" class="close-modal-btn">&times;</button>
                         </div>
                         <div class="modal-body-sys">
-                            <p class="modal-instruction">Se encontraron múltiples coincidencias. Seleccione el documento exacto que requiere corregir:</p>
+                            <p class="description" style="margin-bottom: 15px;">Se encontraron múltiples coincidencias. Seleccione el documento exacto que requiere corregir:</p>
                             
                             <div class="table-responsive">
                                 <table class="table-system">
-                                    <thead>
+                                    <thead class="table-head">
                                         <tr>
-                                            <th>Fecha Emisión</th>
-                                            <th>N° Factura</th>
-                                            <th>Proveedor</th>
-                                            <th class="text-right">Monto Total</th>
-                                            <th class="text-center">Acción</th>
+                                            <th class="th-cell">Fecha Emisión</th>
+                                            <th class="th-cell">N° Factura</th>
+                                            <th class="th-cell">Proveedor</th>
+                                            <th class="th-cell th-right">Monto Total</th>
+                                            <th class="th-cell" style="text-align: center;">Acción</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tbodyModalFacturas">
@@ -431,21 +440,23 @@
 
                     <div class="flex-row gap-25 align-start">
                         <div class="panel-list panel-list-proveedores">
-                            <table id="tablaProveedores">
-                                <thead class="table-head">
-                                    <tr>
-                                        <th id="td_rif" class="th-cell">RIF</th>
-                                        <th class="th-cell">Razón Social</th>
-                                        <th class="th-cell">Teléfono</th>
-                                        <th class="th-cell th-right">Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="listaProveedoresCuerpo">
-                                    <tr>
-                                        <td colspan="4" class="empty-state">Cargando proveedores...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div class="table-responsive">
+                                <table id="tablaProveedores">
+                                    <thead class="table-head">
+                                        <tr>
+                                            <th id="td_rif" class="th-cell">RIF</th>
+                                            <th class="th-cell">Razón Social</th>
+                                            <th class="th-cell">Teléfono</th>
+                                            <th class="th-cell th-right">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="listaProveedoresCuerpo">
+                                        <tr>
+                                            <td colspan="4" class="empty-state">Cargando proveedores...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
                         <div id="panelEditarProveedor" class="panel-edit-provider">
@@ -556,23 +567,25 @@
                     <p class="description">Monitoreo en tiempo real de operaciones CREATE, UPDATE y DELETE sobre los módulos del SGAF.</p>
 
                     <div class="panel-list panel-list-historial">
-                        <table>
-                            <thead class="table-head">
-                                <tr>
-                                    <th class="th-cell">Fecha / Hora</th>
-                                    <th class="th-cell">Usuario</th>
-                                    <th class="th-cell">Acción</th>
-                                    <th class="th-cell">Módulo</th>
-                                    <!--<th class="th-cell">ID Reg.</th>
-                                    <th class="th-cell">Detalles (JSON)</th>-->
-                                </tr>
-                            </thead>
-                            <tbody id="tablaHistorialCuerpo">
-                                <tr>
-                                    <td colspan="6" class="empty-state">No hay registros de historial actualmente.</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table>
+                                <thead class="table-head">
+                                    <tr>
+                                        <th class="th-cell">Fecha / Hora</th>
+                                        <th class="th-cell">Usuario</th>
+                                        <th class="th-cell">Acción</th>
+                                        <th class="th-cell">Módulo</th>
+                                        <!--<th class="th-cell">ID Reg.</th>
+                                        <th class="th-cell">Detalles (JSON)</th>-->
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaHistorialCuerpo">
+                                    <tr>
+                                        <td colspan="6" class="empty-state">No hay registros de historial actualmente.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     <div class="historial-controls">
                         <span id="infoPaginacion" class="info-pag">Página 1 de 1</span>
@@ -595,22 +608,24 @@
                                 <span class="header-title">Operadores Registrados</span>
                                 <button class="btn btn-small btn-success" id="btnModoRegistro">+ Nuevo Usuario</button>
                             </div>
-                            <table id="tablaUsuarios">
-                                <thead class="table-head">
-                                    <tr>
-                                        <th class="th-cell">Usuario</th>
-                                        <th class="th-cell">Nombre Completo</th>
-                                        <th class="th-cell">Rol</th>
-                                        <th class="th-cell">Estado</th>
-                                        <th class="th-cell th-right">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="listaUsuariosCuerpo">
-                                    <tr>
-                                        <td colspan="5" class="empty-state">Cargando registros...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div class="table-responsive">
+                                <table id="tablaUsuarios">
+                                    <thead class="table-head">
+                                        <tr>
+                                            <th class="th-cell">Usuario</th>
+                                            <th class="th-cell">Nombre Completo</th>
+                                            <th class="th-cell">Rol</th>
+                                            <th class="th-cell">Estado</th>
+                                            <th class="th-cell th-right">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="listaUsuariosCuerpo">
+                                        <tr>
+                                            <td colspan="5" class="empty-state">Cargando registros...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
                         <div id="panelFormUsuario" class="panel-form-usuario hidden">

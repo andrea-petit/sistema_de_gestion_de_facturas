@@ -1,19 +1,3 @@
-.hidden-sys {
-    display: none !important;
-}
-.divider-sys {
-    border: 0;
-    height: 1px;
-    background: #e3e6f0;
-    margin: 25px 0;
-}
-.input-with-button {
-    display: flex;
-    gap: 10px;
-}
-.input-with-button input {
-    flex: 1;
-}
 .error-box-sys {
     background-color: #fce8e6;
     color: #c5221f;
@@ -46,17 +30,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 0.85rem;
 }
 /* El Cuadro Blanco Contenedor */
-.modal-content-sys {
+.modal-content-sys, .modal-sys-content {
     background-color: #ffffff;
     border-radius: 8px;
     width: 75%;
     max-width: 850px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     animation: fadeInSys 0.25s ease-out;
+    padding: 0;
 }
-.modal-header-sys {
+.modal-sys-content {
+    padding: 20px;
+}
+.modal-header-sys, .modal-sys-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -66,7 +55,7 @@
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
 }
-.modal-header-sys h3 {
+.modal-header-sys h3, .modal-sys-header h3 {
     margin: 0;
     color: #4e73df;
 }
@@ -115,36 +104,6 @@
     to { transform: scale(1); opacity: 1; }
 }
 
-/* Alias classes for modal to match HTML naming */
-.modal-sys {
-    font-size: 0.85rem; /* Slightly smaller text for better fit */
-}
-.modal-sys-content {
-    background-color: #ffffff;
-    border-radius: 8px;
-    width: 75%;
-    max-width: 850px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    animation: fadeInSys 0.25s ease-out;
-    padding: 20px;
-}
-.modal-sys-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
-    border-bottom: 1px solid #e3e6f0;
-    background-color: #f8f9fc;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-}
-.modal-sys-header h3 {
-    margin: 0;
-    color: #4e73df;
-}
-.modal-sys-body {
-    padding: 20px;
-}
 /* Table styling within modal */
 .modal-sys .table-system {
     border-collapse: collapse;
@@ -161,4 +120,42 @@
 .modal-sys .table-system th {
     background-color: #f8f9fc;
     color: #4e73df;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .modal-content-sys,
+    .modal-sys-content {
+        width: 95%;
+        max-width: none;
+    }
+    .modal-body-sys {
+        padding: 15px;
+    }
+    .modal-sys .table-system {
+        table-layout: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-content-sys,
+    .modal-sys-content {
+        width: 98%;
+        padding: 0;
+    }
+    .modal-sys-content {
+        padding: 15px;
+    }
+    .modal-header-sys,
+    .modal-sys-header {
+        padding: 12px 15px;
+    }
+    .pagination-container-sys {
+        gap: 8px;
+        font-size: 12px;
+    }
+    .btn-page {
+        padding: 5px 8px;
+        font-size: 12px;
+    }
 }

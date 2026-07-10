@@ -1,4 +1,4 @@
-﻿import { switchView } from './modulos/ui.js';
+import { switchView } from './modulos/ui.js';
 import { initUploadForm } from './modulos/uploadFacturaModule.js';
 import { initBuscarModulo } from './modulos/buscarFacturaModule.js';
 import { initHistorialModulo } from './modulos/historialModule.js';
@@ -47,6 +47,44 @@ document.addEventListener('DOMContentLoaded', async () => {
     initEditarFacturaModulo();
     initReportes();
     initComprobantes();
+
+    // --- Mobile Sidebar Drawer Toggle ---
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+
+    function openSidebar() {
+        sidebar.classList.add('open');
+        overlay.classList.add('active');
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+    }
+
+    if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', () => {
+            if (sidebar.classList.contains('open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+    }
+
+    if (overlay) {
+        overlay.addEventListener('click', closeSidebar);
+    }
+
+    // Close sidebar when a submenu link is clicked on mobile
+    document.querySelectorAll('.submenu-link').forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                closeSidebar();
+            }
+        });
+    });
 });
 
 
