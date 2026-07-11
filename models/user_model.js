@@ -96,11 +96,23 @@ const userModel = {
         });
     },
 
-    setRecoveryToken(correo, token, expiracion) {
+    getUserByUsername(nombre_usuario) {
+        return new Promise((resolve, reject) => {
+            pool.query('SELECT * FROM usuarios WHERE nombre_usuario = $1', [nombre_usuario], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
+    },
+
+    setRecoveryTokenByUsername(nombre_usuario, token, expiracion) {
         return new Promise((resolve, reject) => {
             pool.query(
-                'UPDATE usuarios SET token_recuperacion = $1, token_expiracion = $2 WHERE correo = $3 RETURNING *',
-                [token, expiracion, correo],
+                'UPDATE usuarios SET token_recuperacion = $1, token_expiracion = $2 WHERE nombre_usuario = $3 RETURNING *',
+                [token, expiracion, nombre_usuario],
                 (error, results) => {
                     if (error) {
                         reject(error);
@@ -112,11 +124,11 @@ const userModel = {
         });
     },
 
-    getRecoveryTokenData(correo) {
+    getRecoveryTokenDataByUsername(nombre_usuario) {
         return new Promise((resolve, reject) => {
             pool.query(
-                'SELECT token_recuperacion, token_expiracion FROM usuarios WHERE correo = $1',
-                [correo],
+                'SELECT token_recuperacion, token_expiracion FROM usuarios WHERE nombre_usuario = $1',
+                [nombre_usuario],
                 (error, results) => {
                     if (error) {
                         reject(error);
@@ -128,11 +140,11 @@ const userModel = {
         });
     },
 
-    updatePasswordByCorreo(correo, contraseña_hash) {
+    updatePasswordByUsername(nombre_usuario, contraseña_hash) {
         return new Promise((resolve, reject) => {
             pool.query(
-                'UPDATE usuarios SET contraseña_hash = $1, token_recuperacion = NULL, token_expiracion = NULL WHERE correo = $2 RETURNING *',
-                [contraseña_hash, correo],
+                'UPDATE usuarios SET contraseña_hash = $1, token_recuperacion = NULL, token_expiracion = NULL WHERE nombre_usuario = $2 RETURNING *',
+                [contraseña_hash, nombre_usuario],
                 (error, results) => {
                     if (error) {
                         reject(error);

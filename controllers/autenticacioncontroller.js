@@ -72,27 +72,28 @@ const ingresarUsuario = async (req, res) => {
 
 const solicitarRecuperacion = async (req, res) => {
   try {
-    const { correo } = req.body;
-    if (!correo) {
-      return res.status(400).json({ ok: false, msg: 'Por favor, introduce tu correo electrónico.' });
+    const { usuario } = req.body;
+    if (!usuario) {
+      return res.status(400).json({ ok: false, msg: 'Por favor, introduce tu nombre de usuario.' });
     }
 
-    const usuarioExiste = await userModel.getUserByCorreo(correo);
+    const usuarioExiste = await userModel.getUserByUsername(usuario);
     if (usuarioExiste.rows.length === 0) {
-      return res.status(404).json({ ok: false, msg: 'El correo no está registrado en el sistema.' });
+      return res.status(404).json({ ok: false, msg: 'Nombre de usuario no encontrado.' });
     }
 
+    const usuarioDB = usuarioExiste.rows[0];
     const codigoVerificacion = Math.floor(100000 + Math.random() * 900000).toString();
     const tiempoExpiracion = new Date(Date.now() + 5 * 60 * 1000);
 
-    await userModel.setRecoveryToken(correo, codigoVerificacion, tiempoExpiracion);
+    await userModel.setRecoveryTokenByUsername(usuario, codigoVerificacion, tiempoExpiracion);
 
-    const correoEnviado = await enviarCorreoRecuperacion(correo, codigoVerificacion);
+    const correoEnviado = await enviarCorreoRecuperacion(usuarioDB.correo, codigoVerificacion);
     if (!correoEnviado) {
       return res.status(500).json({ ok: false, msg: 'Error al enviar el correo electrónico de recuperación.' });
     }
 
-    return res.status(200).json({ ok: true, msg: 'Código de verificación enviado al correo exitosamente.' });
+    return res.status(200).json({ ok: true, msg: 'Código de verificación enviado al correo registrado.' });
   } catch (error) {
     console.error('Error en solicitarRecuperacion:', error);
     return res.status(500).json({ ok: false, msg: 'Error interno en el servidor.' });
@@ -101,12 +102,12 @@ const solicitarRecuperacion = async (req, res) => {
 
 const verificarCodigo = async (req, res) => {
   try {
-    const { correo, codigo } = req.body;
-    if (!correo || !codigo) {
-      return res.status(400).json({ ok: false, msg: 'El correo y el código son obligatorios.' });
+    const { usuario, codigo } = req.body;
+    if (!usuario || !codigo) {
+      return res.status(400).json({ ok: false, msg: 'El usuario y el código son obligatorios.' });
     }
 
-    const resultado = await userModel.getRecoveryTokenData(correo);
+    const resultado = await userModel.getRecoveryTokenDataByUsername(usuario);
     if (resultado.rows.length === 0) {
       return res.status(404).json({ ok: false, msg: 'Usuario no encontrado.' });
     }
@@ -120,7 +121,7 @@ const verificarCodigo = async (req, res) => {
       return res.status(400).json({ ok: false, msg: 'El código ha expirado. Solicita uno nuevo.' });
     }
 
-    return res.status(200).json({ ok: true, msg: 'Código verificado correctamente. Puedes cambiar tu contraseña.' });
+    return res.status(200).json({ ok: true, msg: 'Código verificado correctamente. Ya puedes cambiar tu contraseña.' });
   } catch (error) {
     console.error('Error en verificarCodigo:', error);
     return res.status(500).json({ ok: false, msg: 'Error interno en el servidor.' });
@@ -129,12 +130,12 @@ const verificarCodigo = async (req, res) => {
 
 const cambiarContrasena = async (req, res) => {
   try {
-    const { correo, codigo, nuevaContrasena } = req.body;
-    if (!correo || !codigo || !nuevaContrasena) {
+    const { usuario, codigo, nuevaContrasena } = req.body;
+    if (!usuario || !codigo || !nuevaContrasena) {
       return res.status(400).json({ ok: false, msg: 'Todos los campos son obligatorios.' });
     }
 
-    const resultado = await userModel.getRecoveryTokenData(correo);
+    const resultado = await userModel.getRecoveryTokenDataByUsername(usuario);
     if (resultado.rows.length === 0) {
       return res.status(404).json({ ok: false, msg: 'Usuario no encontrado.' });
     }
@@ -149,7 +150,7 @@ const cambiarContrasena = async (req, res) => {
     }
 
     const nuevaHash = await bcrypt.hash(nuevaContrasena, 10);
-    await userModel.updatePasswordByCorreo(correo, nuevaHash);
+    await userModel.updatePasswordByUsername(usuario, nuevaHash);
 
     return res.status(200).json({ ok: true, msg: 'Contraseña actualizada con éxito total.' });
   } catch (error) {
