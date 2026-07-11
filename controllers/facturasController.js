@@ -5,7 +5,6 @@ const proveedoresModel = require("../models/proveedores_model");
 const categoriasModel = require("../models/categorias_model");
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
 const fs = require("fs");
 const util = require("util");
 const cloudinary = require("cloudinary").v2;
@@ -52,6 +51,7 @@ const facturasController = {
       }
 
       // 1. Ejecutar servicio OCR con LlamaCloud (Tarda aprox. 15s)
+      const { extraerDatosFactura } = require("../services/ocrService");
       const datosExtraidos = await extraerDatosFactura(req.file.path);
 
       // =========================================================================

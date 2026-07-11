@@ -1,5 +1,5 @@
-const rutas_autenticacion = require('./routes/rutas_autenticacion');
 require('dotenv').config();
+const rutas_autenticacion = require('./routes/rutas_autenticacion');
 const express = require('express');
 const session = require('express-session');
 const multer = require('multer');
@@ -19,8 +19,6 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: true, credentials: true }));
 const PORT = process.env.PORT || 3000;
-
-const upload = multer({ dest: 'uploads/' });
 
 app.use(express.static(path.join(__dirname, 'public')));
 

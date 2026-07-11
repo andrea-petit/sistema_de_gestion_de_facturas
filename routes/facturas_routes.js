@@ -1,9 +1,10 @@
 const express = require('express');
+const os = require('os');
 const router = express.Router();
 const facturasController = require('../controllers/facturasController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { sanitizarPeticion } = require('../middleware/sanitizer');
-const upload = require('multer')({ dest: 'uploads/' });
+const upload = require('multer')({ dest: os.tmpdir() });
 
 
 router.post('/facturas', upload.single('factura'), authMiddleware, facturasController.procesarOcr);

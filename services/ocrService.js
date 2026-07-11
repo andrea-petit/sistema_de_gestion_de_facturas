@@ -1,12 +1,26 @@
-const LlamaCloud = require("@llamaindex/llama-cloud").default || require("@llamaindex/llama-cloud");
+const llamaCloudPackage = require("@llamaindex/llama-cloud");
+const LlamaCloud = llamaCloudPackage.default || llamaCloudPackage;
 const fs = require("fs");
 const { extraerProveedorYDireccion } = require('./facturaParser');
 const { clasificarTexto } = require('./nlpClassifier');
 
-// Inicializamos el cliente oficial con la API Key guardada en tu .env
-const client = new LlamaCloud({
-  apiKey: process.env.LLAMA_CLOUD_API_KEY,
-});
+let client = null;
+function getLlamaClient() {
+  if (client) return client;
+
+  const apiKey =
+    process.env.LLAMA_CLOUD_API_KEY?.trim() ||
+    process.env.LLAMA_PARSE_API_KEY?.trim();
+
+  if (!apiKey) {
+    throw new Error(
+      "LLAMA_CLOUD_API_KEY or LLAMA_PARSE_API_KEY is required to use OCR services"
+    );
+  }
+
+  client = new LlamaCloud({ apiKey });
+  return client;
+}
 
 // --- FUNCIONES UTILERIAS MEJORADAS ---
 
@@ -105,8 +119,10 @@ async function extraerDatosFactura(imagePath) {
   try {
     console.log(`Subiendo documento para análisis: ${imagePath}`);
     
+    const llamaClient = getLlamaClient();
+
     // 1. PASO 1: Subir el archivo a LlamaCloud para su procesamiento
-    const fileObj = await client.files.create({
+    const fileObj = await llamaClient.files.create({
       file: fs.createReadStream(imagePath),
       purpose: "parse",
     });
