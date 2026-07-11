@@ -35,9 +35,6 @@ cloudinary.config({
   api_secret: cloudApiSecret,
 });
 
-// Configuración básica de multer para guardar temporalmente la imagen
-const upload = multer({ dest: "uploads/" });
-
 const facturasController = {
   // =================================================================
   // PASO 1: RECIBIR IMAGEN Y EXTRAER DATOS CON IA (No persiste en BD)
