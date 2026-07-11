@@ -82,6 +82,66 @@ const userModel = {
                 }
             });
         });
+    },
+
+    getUserByCorreo(correo) {
+        return new Promise((resolve, reject) => {
+            pool.query('SELECT * FROM usuarios WHERE correo = $1', [correo], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
+    },
+
+    setRecoveryToken(correo, token, expiracion) {
+        return new Promise((resolve, reject) => {
+            pool.query(
+                'UPDATE usuarios SET token_recuperacion = $1, token_expiracion = $2 WHERE correo = $3 RETURNING *',
+                [token, expiracion, correo],
+                (error, results) => {
+                    if (error) {
+                        reject(error);
+                    } else {
+                        resolve(results);
+                    }
+                }
+            );
+        });
+    },
+
+    getRecoveryTokenData(correo) {
+        return new Promise((resolve, reject) => {
+            pool.query(
+                'SELECT token_recuperacion, token_expiracion FROM usuarios WHERE correo = $1',
+                [correo],
+                (error, results) => {
+                    if (error) {
+                        reject(error);
+                    } else {
+                        resolve(results);
+                    }
+                }
+            );
+        });
+    },
+
+    updatePasswordByCorreo(correo, contraseña_hash) {
+        return new Promise((resolve, reject) => {
+            pool.query(
+                'UPDATE usuarios SET contraseña_hash = $1, token_recuperacion = NULL, token_expiracion = NULL WHERE correo = $2 RETURNING *',
+                [contraseña_hash, correo],
+                (error, results) => {
+                    if (error) {
+                        reject(error);
+                    } else {
+                        resolve(results);
+                    }
+                }
+            );
+        });
     }
 };
 
