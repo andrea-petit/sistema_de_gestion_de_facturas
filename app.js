@@ -1,8 +1,7 @@
 require('dotenv').config();
 const rutas_autenticacion = require('./routes/rutas_autenticacion');
 const express = require('express');
-const session = require('express-session');
-const multer = require('multer');
+const cookieSession = require('cookie-session');
 const Tesseract = require('tesseract.js');
 const path = require('path');
 const fs = require('fs');
@@ -18,16 +17,18 @@ const cors = require('cors');
 const app = express();
 app.use(express.json());
 app.use(cors({ origin: true, credentials: true }));
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(express.urlencoded({ extended: true }));
-app.use(session({
-  secret: 'secret-key',
-  resave: false,
-  saveUninitialized: true,
-  cookie: { secure: false }
+app.use(cookieSession({
+  name: 'session',
+  keys: [process.env.SESSION_SECRET || 'secret-key'],
+  maxAge: 24 * 60 * 60 * 1000,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
 }));
 
 app.use('/api', historialRoutes);
