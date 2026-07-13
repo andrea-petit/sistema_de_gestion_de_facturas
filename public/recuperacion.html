@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles/recuperacion.css?v=1">
+    <title>Recuperar contraseña</title>
+</head>
+<body>
+    <div id="recuperacion_container" class="login-container">
+      <div id="bienvenida-recuperacion" class="bienvenida bienvenida-step-1">
+        <img id="prim" src="/img/fondo2 arriba.png" alt="">
+        <img id="seg" src="/img/fondo2 abajo.png" alt="">
+      </div>
+
+      <div class="contenedor">
+          <form id="formulario-recuperacion">
+            <h2>Recuperar contraseña</h2>
+            <div id="caja-error" class="error"></div>
+            <div id="caja-notificacion" class="notificacion hidden"></div>
+              <p class="form-note">Ingresa tu nombre de usuario para recibir el código en el correo registrado.</p>
+              <div class="campo">
+                  <label>Usuario:</label>
+                  <input type="text" id="recuperacion-usuario" maxlength="40" required placeholder="Ingresa tu usuario">
+              </div>
+              <button type="submit" class="btn">Enviar código</button>
+              <button type="button" class="btn btn-secondary" id="btn-volver-login">Volver al login</button>
+          </form>
+
+          <form id="formulario-codigo" class="hidden">
+              <h2>Verificar código</h2>
+              <p class="form-note">El código fue enviado al correo registrado para este usuario.</p>
+              <div class="campo">
+                  <label>Usuario:</label>
+                  <div id="codigo-usuario-label" class="readonly-text"></div>
+                  <input type="hidden" id="codigo-usuario">
+              </div>
+              <div class="campo">
+                  <label>Código de verificación:</label>
+                  <input type="text" id="codigo-valor" maxlength="6" required placeholder="Ingresa el código recibido">
+              </div>
+              <button type="submit" class="btn">Verificar código</button>
+              <button type="button" class="btn btn-secondary" id="btn-volver-login-2">Volver al login</button>
+          </form>
+
+          <form id="formulario-cambiar-clave" class="hidden">
+              <h2>Nueva contraseña</h2>
+              <p class="form-note">Introduce una nueva contraseña luego de verificar el código.</p>
+              <input type="hidden" id="cambiar-usuario">
+              <input type="hidden" id="cambiar-codigo">
+              <div class="campo">
+                  <label>Nueva contraseña:</label>
+                  <input type="password" id="nueva-clave" maxlength="20" required placeholder="Nueva contraseña">
+              </div>
+              <div class="campo">
+                  <label>Confirmar contraseña:</label>
+                  <input type="password" id="confirmar-clave" maxlength="20" required placeholder="Repite la nueva contraseña">
+              </div>
+              <button type="submit" class="btn">Cambiar contraseña</button>
+              <button type="button" class="btn btn-secondary" id="btn-volver-login-3">Volver al login</button>
+          </form>
+      </div>
+    </div>
+
+    <footer class="footer">
+        &copy; 2026 EchoSystems. Todos los derechos reservados.
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/recuperacion.js"></script>
+</body>
+</html>

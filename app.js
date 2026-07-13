@@ -44,6 +44,10 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
+app.get('/recuperacion', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'recuperacion.html'));
+});
+
 app.get('/dashboard', (req, res) => {
     if (req.session && req.session.user) {
     // Prevent browser from caching this page — forces revalidation on back button

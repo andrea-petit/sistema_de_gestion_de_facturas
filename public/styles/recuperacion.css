@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 
 :root {
@@ -18,7 +17,7 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100vh;
   font-family: var(--font-body);
 }
 
@@ -68,10 +67,56 @@ body {
   height: 90%;
   object-fit: cover;
   z-index: 1;
-  margin-bottom: -33px;
+  margin-bottom: -50px;
+  border-radius: 0 0 0px 10px;
+  transition: all 0.3s ease;
+}
+
+.bienvenida-step-2 img#prim {
+  position: relative;
+  mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+  z-index: 2;
+  margin-top: 30px;
+  margin-left: 20px;
+  opacity: 0.82;
+}
+
+.bienvenida-step-2 img#seg {
+  position: absolute;
+  mask-image: linear-gradient(to top, black 20%, transparent 100%);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 90%;
+  object-fit: cover;
+  z-index: 1;
+  margin-bottom: -73px;
   border-radius: 0 0 0px 10px;
 }
 
+.bienvenida-step-3 img#prim {
+  position: relative;
+  mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+  z-index: 2;
+  margin-top: 30px;
+  margin-left: 20px;
+  opacity: 0.82;
+}
+
+.bienvenida-step-3 img#seg {
+  position: absolute;
+  mask-image: linear-gradient(to top, black 20%, transparent 100%);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 90%;
+  object-fit: cover;
+  z-index: 1;
+  margin-bottom: -73px;
+  border-radius: 0 0 0px 10px;
+}
 
 .contenedor {
   padding: 35px;
@@ -87,12 +132,6 @@ body {
   text-decoration: none;
   font-size: 14px;
   padding-top: 10px;
-}
-
-#olvido-clave {
-  display: flex;
-  justify-content: center;
-  margin-top: 5px;
 }
 
 h2 {
@@ -129,7 +168,6 @@ label {
 input {
   width: 100%;
   padding: 12px;
-
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 16px;
@@ -193,62 +231,6 @@ input:focus {
   display: none;
 }
 
-/* Segunda Pantalla: El "Siguiente" paso del sistema */
-#pantalla-sistema {
-  display: none;
-}
-.caja-exito {
-  background: #d4edda;
-  color: #155724;
-  padding: 24px;
-  border-radius: 12px;
-  text-align: left;
-  margin-top: 15px;
-  border-left: 6px solid #28a745;
-  box-shadow: inset 0 0 0 rgba(0,0,0,0.02);
-}
-
-#mensaje-bienvenida {
-  font-size: 20px;
-  font-weight: 700;
-  margin: 0 0 10px;
-  line-height: 1.2;
-}
-
-.mensaje-secundario {
-  margin: 0;
-  font-size: 14px;
-  color: #256029;
-  opacity: 0.9;
-}
-
-.token-area {
-  background: #2d3436;
-  color: #dfe6e9;
-  padding: 12px;
-  border-radius: 6px;
-  font-family: monospace;
-  font-size: 11px;
-  word-break: break-all;
-  margin-top: 10px;
-  max-height: 100px;
-  overflow-y: auto;
-}
-.btn-sistema {
-  display: block;
-  text-decoration: none;
-  text-align: center;
-  background: #2980b9;
-  color: white;
-  padding: 12px;
-  border-radius: 6px;
-  font-weight: bold;
-  margin-top: 15px;
-}
-.btn-sistema:hover {
-  background: #2471a3;
-}
-
 .footer {
   margin-top: 30px;
   padding: 10px;
@@ -260,68 +242,84 @@ input:focus {
   bottom: 0;
 }
 
-/* ===== RESPONSIVE ===== */
-
-@media (max-width: 768px) {
-  body {
-    padding: 20px;
-    height: auto;
-    min-height: 100vh;
-  }
+@media (max-width: 960px) {
   .login-container {
     flex-direction: column;
-    width: 95%;
-    max-width: 420px;
+    width: min(90vw, 700px);
+    margin: 20px auto;
   }
+
   .bienvenida {
     width: 100%;
     height: auto;
   }
+
   .bienvenida img#prim {
-    width: 80%;
+    width: min(85%, 360px);
+    margin-top: 20px;
+    margin-left: 12px;
     position: relative;
     z-index: 2;
-    margin-top: 20px;
-    margin-left: 0;
   }
+
   .bienvenida img#seg {
     display: none;
   }
+
   .contenedor {
+    padding: 28px;
     max-width: 100%;
-    padding: 30px 25px;
-  }
-  h2 {
-    font-size: 28px;
-    margin-bottom: 25px;
-  }
-  .footer {
-    position: relative;
-    margin-top: 20px;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   body {
     padding: 15px;
   }
+
   .login-container {
     width: 100%;
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
   }
+
+  .bienvenida {
+    padding: 0 8px;
+  }
+
+  .bienvenida img#prim {
+    width: 80%;
+    margin-top: 16px;
+    margin-left: 0;
+    position: relative;
+    z-index: 2;
+  }
+
+  .bienvenida img#seg {
+    display: none;
+  }
+
   .contenedor {
-    padding: 25px 20px;
+    padding: 22px;
   }
+
   h2 {
-    font-size: 24px;
-    margin-bottom: 20px;
+    font-size: 28px;
+    margin-bottom: 24px;
   }
-  input {
-    padding: 10px;
-    font-size: 14px;
+
+  .campo {
+    margin-bottom: 14px;
   }
-  .btn {
+
+  input,
+  .btn,
+  .btn-secondary {
+    font-size: 15px;
     padding: 10px;
-    font-size: 14px;
+  }
+
+  .btn,
+  .btn-secondary {
+    border-radius: 8px;
   }
 }
