@@ -243,6 +243,14 @@ input:focus {
 }
 
 @media (max-width: 960px) {
+    body {
+    padding: 20px;
+    height: auto;
+    min-height: 100vh;
+    background: url('../img/fondo-tlf.png') no-repeat center center fixed;
+    background-size: cover;
+  }
+
   .login-container {
     flex-direction: column;
     width: min(90vw, 700px);

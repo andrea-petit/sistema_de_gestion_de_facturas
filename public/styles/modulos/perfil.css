@@ -24,7 +24,7 @@
   background: white;
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 .alert-success {
   background: #dcfce7;
@@ -63,13 +63,22 @@
   gap: 15px;
 }
 .panel-header {
+  font-family: var(--font-body);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   /*align-items: center;*/
   border-bottom: 2px solid var(--border);
-  padding-bottom: 15px;
+  padding: 15px;
   margin-bottom: 20px;
+  background-color: #FFFFFF;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.panel-header p{
+font-size: 13px;
+color: #64748b;
 }
 
 /* ===== RESPONSIVE ===== */

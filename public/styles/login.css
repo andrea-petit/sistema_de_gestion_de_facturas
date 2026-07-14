@@ -28,7 +28,7 @@ body {
   flex-direction: row;
   align-items: center;
   border-radius: 10px;
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 .bienvenida {
@@ -267,6 +267,8 @@ input:focus {
     padding: 20px;
     height: auto;
     min-height: 100vh;
+    background: url('../img/fondo-tlf.png') no-repeat center center fixed;
+    background-size: cover;
   }
   .login-container {
     flex-direction: column;
@@ -306,7 +308,7 @@ input:focus {
   }
   .login-container {
     width: 100%;
-    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   }
   .contenedor {
     padding: 25px 20px;

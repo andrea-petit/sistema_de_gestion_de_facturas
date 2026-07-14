@@ -194,17 +194,16 @@ const userController= {
     },
 
     async logoutUser(req, res) {
-        if (req && req.session) {
-            req.session.destroy(err => {
-                if (err) {
-                    console.error("Error destroying session during logout:", err);
-                    return res.status(500).json({ ok: false, msg: 'Error logging out.' });
-                }
-                res.clearCookie('connect.sid'); // Limpia la cookie de sesión
-                res.status(200).json({ ok: true, msg: 'Logged out successfully.' });
-            });
-        } else {
-            res.status(400).json({ ok: false, msg: 'No active session found.' });
+        try {
+            if (req && req.session) {
+                req.session = null;
+                res.clearCookie('session');
+                return res.status(200).json({ ok: true, msg: 'Logged out successfully.' });
+            }
+            return res.status(400).json({ ok: false, msg: 'No active session found.' });
+        } catch (error) {
+            console.error('Error during logout:', error);
+            return res.status(500).json({ ok: false, msg: 'Error logging out.' });
         }
     }
 

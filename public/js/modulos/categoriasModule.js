@@ -216,8 +216,8 @@ export async function initCategoriasModulo(forzarRefresco = false) {
                         <td>${fechaFormateada}</td>
                         <td><strong>${fac.numero_factura}</strong></td>
                         <td>${fac.proveedor}</td>
-                        <td class="text-right text-primary" style="font-weight: bold;">${montoBs} BS</td>
-                        <td><span class="badge badge-success">${estatusLimpios}</span></td>`;
+                        <td class="text-right text-primary" style="font-weight: bold;">${montoBs} BS</td>`;
+                    //<td><span class="badge badge-success">${estatusLimpios}</span></td>
                     tbody.appendChild(tr);
                 });
                 // Update pagination UI

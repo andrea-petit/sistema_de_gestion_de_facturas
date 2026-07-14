@@ -20,6 +20,7 @@
 
 /* Contenedor del Modal de Fondo */
 .modal-sys {
+    padding: 10px;
     position: fixed;
     z-index: 1050;
     left: 0;
@@ -30,7 +31,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.85rem;
+    font-size: 0.70rem;
+    font-family: var(--font-body);
 }
 /* El Cuadro Blanco Contenedor */
 .modal-content-sys, .modal-sys-content {
@@ -54,6 +56,7 @@
     background-color: #f8f9fc;
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
+    font-size:1rem;
 }
 .modal-header-sys h3, .modal-sys-header h3 {
     margin: 0;
@@ -72,6 +75,10 @@
 .modal-body-sys {
     padding: 20px;
 }
+.modal-body-sys p {
+    font-size: 1rem;
+}
+
 /* Barra de Paginación */
 .pagination-container-sys {
     display: flex;
@@ -158,4 +165,4 @@
         padding: 5px 8px;
         font-size: 12px;
     }
-}
+}

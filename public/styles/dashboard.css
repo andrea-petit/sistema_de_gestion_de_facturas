@@ -6,6 +6,7 @@
   --success: #16a34a;
   --warning: #ea580c;
   --bg: url('../img/fondo_dashboard.png') no-repeat center center fixed;
+  --bg-mobile: url('../img/fondo-tlf.png') no-repeat center center fixed;
   --card: #ffffff;
   --text: #1e293b;
   --text-muted: #64748b;
@@ -162,7 +163,7 @@ html.swal2-height-auto {
   background: var(--card);
   padding: 30px 50px 30px 50px;
   border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   border: 1px solid var(--border);
   margin-bottom: 20px;
 }
@@ -515,6 +516,12 @@ h2 {
 
 /* ===== RESPONSIVE: MOBILE (≤768px) ===== */
 @media (max-width: 768px) {
+  body {
+    background: var(--bg-mobile);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
   /* Sidebar becomes a drawer */
   .sidebar {
     position: fixed;
@@ -604,13 +611,13 @@ h2 {
   }
 
   .content-body {
-    padding: 10px;
+    padding: 20px;
   }
 
   .container-box {
     padding: 15px;
     border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   }
 
   h2 {
