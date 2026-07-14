@@ -503,7 +503,7 @@ background-color: var(--primary-hover);
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  font-size: 8px;
+  font-size: 13px;
 }
 
 .table-responsive th {
@@ -535,6 +535,13 @@ background-color: var(--primary-hover);
     padding: 25px 30px;
     max-width: 100%;
   }
+
+  .table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  font-size: 8px;
+}
 }
 
 /* ===== RESPONSIVE: MOBILE (≤768px) ===== */
