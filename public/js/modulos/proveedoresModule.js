@@ -21,7 +21,7 @@ export function initProveedoresModulo() {
       btnSubmit.innerText = "Guardando...";
     }
 
-    // 📦 Recolectamos todos los campos en un solo objeto
+    //  Recolectamos todos los campos en un solo objeto
     const datosActualizados = {
       rif: document.getElementById("editProvRif")?.value.trim() || "",
       razon_social:
@@ -34,7 +34,7 @@ export function initProveedoresModulo() {
     };
 
     try {
-      // 🚀 Un solo viaje al servidor
+      //  Un solo viaje al servidor
       const response = await fetch(`/api/proveedores/${idProveedor}`, {
         method: "PUT",
         credentials: "include",
@@ -118,7 +118,7 @@ export async function cargarProveedores(pagina = 1) {
       tr.style.transition = "background 0.2s";
 
       // ====================================================================
-      // 🔥 SOLUCIÓN A LA DOBLE LETRA: Formateo Condicional Inteligente
+      //  SOLUCIÓN A LA DOBLE LETRA: Formateo Condicional Inteligente
       // ====================================================================
       let rifCompleto = prov.rif || "S/RIF";
       const tipoDocPrefix = prov.tipo_documento
@@ -137,7 +137,7 @@ export async function cargarProveedores(pagina = 1) {
       tr.innerHTML = `
                 <td class="td-prov" style="font-weight: 600; color: #0f172a;">${rifVisual}</td>
                 <td class="td-prov" style="color: #334155; font-weight: 500;">${prov.razon_social}</td>
-                <td class="td-prov td-tel" style="color: #64748b;">${prov.telefono || "N/A"}</td>
+                <td class="td-prov td-tel" style=" display: none; color: #64748b;">${prov.telefono || "N/A"}</td>
                 <td class="td-prov" style="text-align: right;">
                     <button class="btn-editar-prov" title="Editar" style="background: #f1f5f9; color: var(--primary); border: 1px solid var(--border); font-size: 12px; font-weight: 600; border-radius: 4px; cursor: pointer; transition: all 0.2s;">
                         <i class="fas fa-edit show-on-mobile"></i><span class="hide-on-mobile">Editar</span>

@@ -26,6 +26,23 @@
     cursor: pointer;
 }
 
+#formGenerarReporte .btn-pdf {
+    background-color: #dc2626;
+}
+
+#formGenerarReporte .btn-excel {
+    background-color: #10b981;
+}
+
+#formGenerarReporte .btn-pdf:hover {
+    background-color: #ae1d1d;
+}
+
+#formGenerarReporte .btn-excel:hover {
+    background-color: #0b8a60;
+}
+
+
 /* Reutilización del layout de cuadrícula que usas en subir facturas */
 @media (min-width: 768px) {
     .calc-grid {

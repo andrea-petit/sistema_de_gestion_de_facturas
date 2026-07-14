@@ -103,7 +103,10 @@ export async function initEditarFacturaModulo() {
                     <td>${fac.proveedor}</td>
                     <td class="text-right" style="color:#4e73df; font-weight:bold;">${monto} BS</td>
                     <td class="text-center">
-                        <button type="button" class="btn-sys btn-table-select"><i class="fas fa-check"></i> Editar</button>
+                        <button type="button" class="btn-sys btn-table-select" title="Editar">
+                            <i class="fas fa-edit show-on-mobile"></i>
+                            <span class="hide-on-mobile">Editar</span>
+                        </button>
                     </td>
                 `;
 
@@ -177,11 +180,21 @@ export async function initEditarFacturaModulo() {
             const resData = await response.json();
             if (!response.ok) throw new Error(resData.error);
 
-            alert('¡Corrección efectuada y guardada en auditoría!');
+            await Swal.fire({
+                title: '¡Corrección efectuada!',
+                text: 'Se guardó correctamente en auditoría.',
+                icon: 'success',
+                confirmButtonText: 'Aceptar'
+            });
             resetModulo();
 
         } catch (error) {
-            alert(`Error al actualizar: ${error.message}`);
+            await Swal.fire({
+                title: 'Error al actualizar',
+                text: error.message,
+                icon: 'error',
+                confirmButtonText: 'Aceptar'
+            });
         }
     });
 

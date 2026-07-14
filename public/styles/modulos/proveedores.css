@@ -7,6 +7,7 @@
 }
 #panelEditarProveedor {
   background: #f8fafc;
+  font-family: var(--font-body);
 }
 
 #td_rif {
@@ -75,7 +76,7 @@
     max-width: 100%;
   }
   #td_rif {
-    width: auto;
+    width: 100px;
   }
   #view-ver-proveedores table {
     min-width: 0;
@@ -96,11 +97,8 @@
     font-size: 12px;
   }
   .td-prov {
-    padding: 6px 3px;
+    padding: 10px 8px;
     font-size: 10px;
-  }
-  .td-tel {
-    font-size: 9px;
   }
   .btn-editar-prov {
     padding: 6px 8px;

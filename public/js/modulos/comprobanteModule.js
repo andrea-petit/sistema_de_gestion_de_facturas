@@ -11,7 +11,12 @@ export function initComprobantes() {
         const idBuscar = comprobanteInput.value.trim();
         
         if (!idBuscar) {
-            alert("Por favor, ingrese un identificador de comprobante válido.");
+            Swal.fire({
+                title: 'Campo requerido',
+                text: 'Por favor, ingrese un identificador de comprobante válido.',
+                icon: 'warning',
+                confirmButtonText: 'Aceptar'
+            });
             return;
         }
 

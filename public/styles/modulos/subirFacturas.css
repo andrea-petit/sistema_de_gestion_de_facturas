@@ -23,6 +23,7 @@ input[type="file"] {
   margin: 15px 0;
   color: var(--primary);
   font-weight: bold;
+  font-family: var(--font-body);
 }
 .result-section {
   display: none;

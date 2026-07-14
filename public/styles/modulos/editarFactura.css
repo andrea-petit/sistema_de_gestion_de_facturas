@@ -13,6 +13,8 @@
     border-radius: 6px;
     margin-top: 15px;
     font-weight: 500;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
 }
 .status-msg-area {
     min-height: 20px;
@@ -75,9 +77,7 @@
 .modal-body-sys {
     padding: 20px;
 }
-.modal-body-sys p {
-    font-size: 1rem;
-}
+
 
 /* Barra de Paginación */
 .pagination-container-sys {
