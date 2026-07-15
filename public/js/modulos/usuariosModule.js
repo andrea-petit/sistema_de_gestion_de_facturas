@@ -155,7 +155,7 @@ export async function cargarUsuariosTabla(operadorRol) {
             tr.innerHTML = `
                 <td class="td-username">@${user.nombre_usuario || 'S/U'}</td>
                 <td class="td-normal">${user.nombre_completo || 'Sin Nombre'}</td>
-                <td class="td-role"><span style="text-transform: capitalize; font-size: 12px; color: #475569; font-weight: 500;">${user.rol || 'Sin Rol'}</span></td>
+                <td class="td-role"><span style="text-transform: capitalize; color: #475569;">${user.rol || 'Sin Rol'}</span></td>
                 <td style="text-align: center;">${badgeEstado}</td>
                 <td class="td-actions acciones-zona"></td>
             `;
