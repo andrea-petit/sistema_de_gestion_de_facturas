@@ -23,7 +23,7 @@ export async function switchView(viewId, element) {
     const parentMenuName = parentMenu ? parentMenu.querySelector('.menu-btn')?.innerText : '';
     const topBarTitle = document.getElementById('topBarTitle');
     if (topBarTitle) {
-        topBarTitle.innerText = parentMenuName ? `${parentMenuName} 🡆 ${element.innerText}` : element.innerText;
+        topBarTitle.innerText = parentMenuName ? `${parentMenuName} ➜ ${element.innerText}` : element.innerText;
     }
 
 

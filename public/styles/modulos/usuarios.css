@@ -119,6 +119,22 @@
   background: #eff6ff;
 }
 
+#btnCancelarEdicion {
+  background-color: #dc2626;
+}
+
+#btnCancelarEdicion:hover {
+  background-color: #ae1d1d;
+}
+
+#btnSubmitUsuario {
+  background-color: #10b981;
+}
+
+#btnSubmitUsuario:hover {
+  background-color: #0b8a60;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .panel-form-usuario {

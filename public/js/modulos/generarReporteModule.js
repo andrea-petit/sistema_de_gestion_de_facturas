@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:3000/api/facturas';
+const BASE_URL = '/api/facturas';
 
 export function initReportes() {
     const tipoReporte = document.getElementById('tipoReporte');

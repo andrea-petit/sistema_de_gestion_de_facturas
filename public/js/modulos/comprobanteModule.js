@@ -1,5 +1,5 @@
 // modules/comprobantes.js
-const BASE_URL = 'http://localhost:3000/api/facturas';
+const BASE_URL = '/api/facturas';
 
 export function initComprobantes() {
     const btnConsultar = document.getElementById('btnConsultarComprobante');

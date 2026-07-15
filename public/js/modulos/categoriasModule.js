@@ -165,7 +165,7 @@ export async function initCategoriasModulo(forzarRefresco = false) {
         const tbody = document.getElementById('tbodyDetalleGastos');
         const tituloModal = document.getElementById('modalCategoriaTitulo');
         
-        if (tituloModal) tituloModal.textContent = `Libro de Compras > Categoría: ${categoriaNombre}`;
+        if (tituloModal) tituloModal.textContent = `Libro de Compras ➜ Categoría: ${categoriaNombre}`;
         if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin"></i> Extrayendo historial analítico...</td></tr>';
         
         if (modalDesglose) modalDesglose.classList.remove('hidden');
